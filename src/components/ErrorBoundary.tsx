@@ -1,4 +1,5 @@
-import React, { ErrorInfo, ReactNode } from 'react';
+// Fix: Changed component to extend `Component` directly and updated import to resolve TypeScript error with `this.props`.
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;
@@ -9,9 +10,7 @@ interface State {
   error: Error | null;
 }
 
-// Fix: Changed `extends Component<...>` to `extends React.Component<...>` and updated imports
-// to resolve a TypeScript error where `this.props` was not being correctly typed on the class instance.
-class ErrorBoundary extends React.Component<Props, State> {
+class ErrorBoundary extends Component<Props, State> {
   state: State = {
     hasError: false,
     error: null,
@@ -43,7 +42,8 @@ class ErrorBoundary extends React.Component<Props, State> {
                 <ol className="list-decimal list-inside space-y-2">
                   <li>前往您的部署平台（例如 Vercel, Netlify）。</li>
                   <li>在專案設定中找到「Environment Variables」（環境變數）區塊。</li>
-                  <li>新增一個名為 <code className="bg-pink-200 dark:bg-purple-900 px-1.5 py-0.5 rounded font-mono text-pink-700 dark:text-purple-300">VITE_API_KEY</code> 的變數。</li>
+                  {/* Fix: Updated environment variable name to API_KEY for consistency. */}
+                  <li>新增一個名為 <code className="bg-pink-200 dark:bg-purple-900 px-1.5 py-0.5 rounded font-mono text-pink-700 dark:text-purple-300">API_KEY</code> 的變數。</li>
                   <li>將您的 Google AI Studio API 金鑰作為其值貼上。</li>
                   <li>重新部署您的應用程式。</li>
                 </ol>

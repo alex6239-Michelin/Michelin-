@@ -1,23 +1,11 @@
-// Fix: Manually define types for import.meta.env as a workaround for a broken TypeScript environment
-// where 'vite/client' types are not being loaded. This resolves the errors about 'vite/client'
-// not being found and 'env' not existing on 'ImportMeta'.
-declare interface ImportMeta {
-  readonly env: {
-      readonly VITE_API_KEY?: string;
-  };
-}
+// Fix: Switched to using `process.env.API_KEY` to align with Gemini API guidelines and resolved associated TypeScript errors.
+declare var process: any;
 
 import { GoogleGenAI, Type } from "@google/genai";
 import { type ChatMessage, type PracticeProblem, type TopicSummary } from '../types';
 
-// Use import.meta.env for standard Vite compatibility.
-const apiKey = import.meta.env.VITE_API_KEY;
-
-// The API key is intentionally allowed to be undefined here.
-// The GoogleGenAI library will handle this and throw an error only when an API call
-// is actually made, which will be caught gracefully by our handleApiError function.
-// This prevents the entire app from crashing with a blank page if the key is missing.
-const ai = new GoogleGenAI({ apiKey });
+// Fix: Initialized GoogleGenAI directly with process.env.API_KEY as per the guidelines.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 
 /**
@@ -39,8 +27,9 @@ const handleApiError = (error: any, context: string): Error => {
          message = '向 AI 伺服器發送的請求格式有誤 (錯誤 400)，這可能是由於輸入內容包含不安全或不支援的字詞。';
     } else if (errorMessage.includes('429')) {
         message = '您的請求頻率過高，請稍後再試。';
+    // Fix: Updated API key error message to be generic and reference the correct environment variable.
     } else if (errorMessage.includes('API key not valid') || errorMessage.includes('API_KEY')) {
-        message = 'API 金鑰無效或未設置。請檢查您在 Vercel 中的 VITE_API_KEY 環境變數是否已正確設定。';
+        message = 'API 金鑰無效或未設置，請檢查您的環境設定。';
     }
     return new Error(message);
 };
