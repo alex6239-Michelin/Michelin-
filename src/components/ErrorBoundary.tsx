@@ -1,4 +1,4 @@
-// Fix: Updated the component to extend `React.Component` and import `React` to resolve a TypeScript error where `this.props` was not being recognized.
+// Fix: The `ErrorBoundary` component must extend `React.Component` to be a valid class component and have access to `this.props`.
 import React, { ErrorInfo, ReactNode } from 'react';
 
 interface Props {

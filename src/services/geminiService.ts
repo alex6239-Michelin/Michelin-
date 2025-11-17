@@ -4,8 +4,15 @@ declare var process: any;
 import { GoogleGenAI, Type } from "@google/genai";
 import { type ChatMessage, type PracticeProblem, type TopicSummary } from '../types';
 
-// Fix: Initialized GoogleGenAI directly with process.env.API_KEY as per the guidelines.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const apiKey = process.env.API_KEY;
+
+if (!apiKey) {
+    // This is a critical module-level check. It will throw an error during app initialization
+    // if the API_KEY is not available at build time, preventing a blank screen with a cryptic error.
+    throw new Error("API_KEY environment variable is not set. Please ensure it's configured in your deployment platform (e.g., Vercel) and that vite.config.ts is set up to expose it.");
+}
+
+const ai = new GoogleGenAI({ apiKey });
 
 
 /**
