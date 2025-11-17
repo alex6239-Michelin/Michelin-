@@ -9,7 +9,7 @@ interface State {
   error: Error | null;
 }
 
-// FIX: The ErrorBoundary class must extend React.Component to be a valid React component and have access to `this.props`.
+// Fix: The ErrorBoundary class must extend `React.Component` to be a valid React component and have access to `this.props`.
 class ErrorBoundary extends React.Component<Props, State> {
   state: State = {
     hasError: false,
@@ -42,7 +42,6 @@ class ErrorBoundary extends React.Component<Props, State> {
                 <ol className="list-decimal list-inside space-y-2">
                   <li>前往您的部署平台（例如 Vercel, Netlify）。</li>
                   <li>在專案設定中找到「Environment Variables」（環境變數）區塊。</li>
-                  {/* Fix: Updated environment variable name to API_KEY for consistency. */}
                   <li>新增一個名為 <code className="bg-pink-200 dark:bg-purple-900 px-1.5 py-0.5 rounded font-mono text-pink-700 dark:text-purple-300">API_KEY</code> 的變數。</li>
                   <li>將您的 Google AI Studio API 金鑰作為其值貼上。</li>
                   <li>重新部署您的應用程式。</li>

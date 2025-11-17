@@ -14,62 +14,51 @@ const getPdfStyles = (): string => `
       font-family: 'Noto Sans TC', sans-serif;
       font-size: 10.5pt;
       line-height: 1.8;
-      color: #333;
+      color: #4A4A4A;
       background-color: #ffffff;
+    }
+    h1, h2, h3, h4, strong {
+      font-family: 'Noto Serif TC', serif; 
+      font-weight: 700;
+      color: #6D2A5B;
       margin: 0;
       padding: 0;
     }
-    .pdf-container {
-      padding: 15mm; /* Add padding to match PDF margins */
-    }
-    .pdf-block {
-      page-break-inside: avoid;
-    }
-    h1, h2, h3, h4, strong {
-      font-family: 'Noto Sans TC', sans-serif; 
-      font-weight: 700;
-      margin: 0 0 10px 0;
-      padding: 0;
-    }
     h1 {
-      font-family: 'Noto Serif TC', serif;
       font-size: 24pt;
-      color: #C2185B; /* Princess Pink */
       text-align: left;
       margin-bottom: 12px;
-      padding-bottom: 8px;
-      border-bottom: 2.5px solid #F8BBD0; /* Light Pink */
+      padding-bottom: 12px;
+      border-bottom: 2px solid #FF69B4;
     }
     h2 {
+      font-size: 16pt;
       font-family: 'Noto Sans TC', sans-serif;
-      font-size: 18pt;
-      font-weight: 700;
-      color: #AD1457; /* Darker Pink */
-      background-color: #FCE4EC; /* Very Light Pink */
-      margin-top: 25px;
+      color: #ffffff;
+      background: linear-gradient(135deg, #FF69B4, #C973FF);
+      margin-top: 28px;
       margin-bottom: 20px;
       padding: 8px 16px;
       border-radius: 8px;
-      border-left: 6px solid #E91E63;
     }
     h3 {
-      font-size: 14pt;
-      color: #5E35B1; /* Deep Purple */
+      font-size: 13pt;
+      color: #FF69B4;
       font-weight: 700;
       margin-top: 20px;
       margin-bottom: 10px;
     }
     h4 {
-      font-size: 12pt;
-      color: #4527A0; /* Darker Purple */
+      font-size: 11.5pt;
+      color: #8C5E8A;
       font-weight: 700;
-      margin-bottom: 5px;
+      margin-bottom: 8px;
     }
     p, div {
       margin-bottom: 12px;
     }
     a {
-      color: #1E88E5; /* Bright Blue */
+      color: #C973FF;
       text-decoration: none;
       font-weight: 500;
     }
@@ -78,8 +67,11 @@ const getPdfStyles = (): string => `
     }
     hr {
       border: 0;
-      border-top: 1px solid #E0E0E0;
-      margin: 25px 0;
+      border-top: 1px solid #FCE4EC;
+      margin: 30px 0;
+    }
+    .pdf-block {
+      page-break-inside: avoid;
     }
     img {
       max-width: 100%;
@@ -87,7 +79,7 @@ const getPdfStyles = (): string => `
       display: block;
       margin: 15px auto;
       border-radius: 8px;
-      border: 1px solid #eee;
+      border: 1px solid #FCE4EC;
     }
   </style>
 `;
@@ -109,29 +101,56 @@ export const exportToPdf = async (htmlContent: string, filename: string): Promis
     const usableHeightMM = pdfHeight - (margin * 2);
     let currentY = margin;
 
-    const tempContainer = document.createElement('div');
-    tempContainer.style.position = 'absolute';
-    tempContainer.style.left = '-9999px';
-    tempContainer.style.width = '800px'; // A fixed width for consistent rendering
-    tempContainer.style.background = 'white';
-    
     const sourceContainer = document.createElement('div');
-    sourceContainer.innerHTML = getPdfStyles() + `<div class="pdf-container">${htmlContent}</div>`;
-    
-    // Append to body to ensure styles are applied
+    sourceContainer.style.position = 'absolute';
+    sourceContainer.style.left = '-9999px';
+    sourceContainer.innerHTML = getPdfStyles() + htmlContent;
     document.body.appendChild(sourceContainer);
     
-    // Select all logical content blocks to render individually
-    // Use a specific class .pdf-block for better control
-    const contentBlocks = Array.from(sourceContainer.querySelectorAll('.pdf-block, h1, h2'));
+    // Select all logical content blocks to render individually, including <hr> tags
+    const contentBlocks = Array.from(sourceContainer.querySelectorAll('.pdf-block, h1, h2, hr'));
 
-    // If no specific blocks are found, treat the whole content as one block
     if (contentBlocks.length === 0) {
-        contentBlocks.push(sourceContainer);
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = sourceContainer.innerHTML; // get the whole thing
+        contentBlocks.push(wrapper);
     }
     
     for (const block of contentBlocks) {
-      const canvas = await html2canvas(block as HTMLElement, { scale: 2.5, useCORS: true });
+      if (block.tagName.toLowerCase() === 'hr') {
+         if (currentY + 10 > usableHeightMM + margin) {
+            pdf.addPage();
+            currentY = margin;
+         }
+         pdf.setDrawColor(252, 228, 236); // Light Pink
+         pdf.line(margin, currentY, pdfWidth - margin, currentY);
+         currentY += 6;
+         continue;
+      }
+
+      const renderContainer = document.createElement('div');
+      renderContainer.style.position = 'absolute';
+      renderContainer.style.left = '-9999px';
+      renderContainer.style.width = '800px';
+      renderContainer.style.background = 'white';
+      
+      // Append styles and the block itself to a clean container for rendering
+      renderContainer.innerHTML = getPdfStyles();
+      renderContainer.appendChild(block.cloneNode(true));
+      document.body.appendChild(renderContainer);
+      
+      const canvas = await html2canvas(renderContainer, { 
+        scale: 2, 
+        useCORS: true,
+        // CRITICAL FIX: Use scrollHeight to capture the full content, not just the visible part.
+        width: renderContainer.scrollWidth,
+        height: renderContainer.scrollHeight,
+        windowWidth: renderContainer.scrollWidth,
+        windowHeight: renderContainer.scrollHeight,
+      });
+
+      document.body.removeChild(renderContainer);
+
       const imgData = canvas.toDataURL('image/png');
       const elementHeightMM = (canvas.height / canvas.width) * usableWidthMM;
       
