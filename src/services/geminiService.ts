@@ -1,7 +1,7 @@
 // Fix: Switched to using `process.env.API_KEY` to align with Gemini API guidelines and resolved associated TypeScript errors.
 declare var process: any;
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
 import { type ChatMessage, type PracticeProblem, type TopicSummary } from '../types';
 
 const apiKey = process.env.API_KEY;
@@ -13,6 +13,50 @@ if (!apiKey) {
 }
 
 const ai = new GoogleGenAI({ apiKey });
+
+/**
+ * A wrapper for ai.models.generateContent that includes a robust retry mechanism with exponential backoff and jitter.
+ * This helps the application recover from transient server errors like 503 (Overloaded) or 429 (Rate limited).
+ * @param params The parameters for the generateContent call.
+ * @param retries The maximum number of retries.
+ * @param delay The initial delay in milliseconds.
+ * @returns A Promise that resolves with the GenerateContentResponse.
+ */
+const generateContentWithRetry = async (
+    params: any, 
+    retries = 5, 
+    delay = 2000
+): Promise<GenerateContentResponse> => {
+    let lastError: any;
+    for (let i = 0; i < retries; i++) {
+        try {
+            const response = await ai.models.generateContent(params);
+            if (!response || !response.text) {
+                throw new Error("AI returned an empty or invalid response.");
+            }
+            return response;
+        } catch (error: any) {
+            lastError = error;
+            const errorMessage = error.toString();
+            // Only retry on specific, transient server-side errors.
+            const isRetryable = errorMessage.includes('500') || errorMessage.includes('503') || errorMessage.includes('429') || errorMessage.includes('Rpc failed');
+            
+            if (isRetryable && i < retries - 1) {
+                const jitter = Math.floor(Math.random() * 1000);
+                const nextDelay = delay + jitter;
+                console.warn(`Attempt ${i + 1} failed with a retryable error. Retrying in ${nextDelay}ms...`);
+                await new Promise(res => setTimeout(res, nextDelay));
+                delay *= 2; // Exponential backoff for the next base delay
+            } else {
+                // On the last attempt or for a non-retryable error, throw the last captured error.
+                throw lastError;
+            }
+        }
+    }
+    // This line should not be reachable if retries > 0, but it satisfies TypeScript
+    // and provides a fallback by throwing the last known error.
+    throw lastError;
+};
 
 
 /**
@@ -106,7 +150,7 @@ export const generateTopicSummary = async (topic: string): Promise<TopicSummary>
 
     Output ONLY a single valid JSON object that matches the specified schema. Do not include any other text, explanations, or markdown formatting.`;
     
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithRetry({
       model,
       contents: prompt,
       config: {
@@ -123,9 +167,6 @@ export const generateTopicSummary = async (topic: string): Promise<TopicSummary>
       },
     });
     const responseText = response.text;
-    if (!responseText) {
-        throw new Error('AI 回應無效，未包含任何 JSON 資料。');
-    }
     const data = parseJsonFromResponse<TopicSummary>(responseText);
     return data;
   } catch(error) {
@@ -147,7 +188,7 @@ export const generatePracticeProblem = async (topic: string, count: number): Pro
     
     Output ONLY a single valid JSON object that is an array of problems matching the specified schema. Do not include any other text, explanations, or markdown formatting.`;
     
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithRetry({
       model,
       contents: prompt,
       config: {
@@ -178,9 +219,6 @@ export const generatePracticeProblem = async (topic: string, count: number): Pro
       },
     });
     const responseText = response.text;
-    if (!responseText) {
-        throw new Error('AI 回應無效，未包含任何 JSON 資料。');
-    }
     const data = parseJsonFromResponse<PracticeProblem[]>(responseText);
     return data;
   } catch (error) {
@@ -194,14 +232,11 @@ export const analyzeDiagram = async (imageFile: File, prompt: string): Promise<s
       const imagePart = await fileToGenerativePart(imageFile);
       const fullPrompt = `You are a strict but helpful physics professor. A student has submitted a free-body diagram for analysis. Your task is to evaluate it based on fundamental physics principles, in Traditional Chinese. DO NOT give the answer or point out the error directly. Instead, use the Socratic method to ask one single, guiding question that directs the student's attention to a potential error in their diagram. Your question should encourage them to rethink their application of a specific concept (e.g., '關於正向力，你認為它應該與哪個表面垂直？'). Here is the student's question: "${prompt}" and their diagram:`;
 
-      const response = await ai.models.generateContent({
+      const response = await generateContentWithRetry({
           model,
           contents: { parts: [{text: fullPrompt}, imagePart] },
       });
       const responseText = response.text;
-      if (!responseText) {
-          throw new Error('AI 回應無效，未包含任何分析文字。');
-      }
       return responseText;
     } catch (error) {
       throw handleApiError(error, 'analyzeDiagram');
@@ -224,14 +259,11 @@ export const generateSimulationCode = async (prompt: string): Promise<string> =>
       Output ONLY the raw HTML code. Do not wrap it in markdown fences like \`\`\`html.`;
 
 
-      const response = await ai.models.generateContent({
+      const response = await generateContentWithRetry({
           model,
           contents: fullPrompt
       });
       const responseText = response.text;
-      if (!responseText) {
-          throw new Error('AI 回應無效，未包含任何程式碼。');
-      }
       // The model sometimes wraps the HTML in markdown, so we clean it.
       const cleanedResponse = responseText.trim().replace(/^```html\n?/, '').replace(/```$/, '');
       return cleanedResponse;

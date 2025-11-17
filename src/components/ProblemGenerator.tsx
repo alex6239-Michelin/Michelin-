@@ -188,7 +188,17 @@ const ProblemGenerator: React.FC = () => {
         </div>
       </div>
 
-      {isLoading && <div className="text-center p-8">正在為您準備學習包，請稍候...</div>}
+      {isLoading && (
+        <div className="text-center p-8 text-slate-500 dark:text-slate-400">
+            <div className="flex items-center justify-center gap-2">
+                <div className="w-2.5 h-2.5 bg-pink-400 rounded-full animate-pulse"></div>
+                <div className="w-2.5 h-2.5 bg-pink-400 rounded-full animate-pulse [animation-delay:0.2s]"></div>
+                <div className="w-2.5 h-2.5 bg-pink-400 rounded-full animate-pulse [animation-delay:0.4s]"></div>
+            </div>
+            <p className="mt-4">公主正在施展魔法，請稍候...</p>
+            <p className="text-sm mt-2">若時間較長，可能是伺服器繁忙，應用程式會自動重試。</p>
+        </div>
+      )}
       {error && <div className="text-center p-8 text-red-500">{error}</div>}
       
       {summary && (
