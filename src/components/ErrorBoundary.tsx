@@ -1,5 +1,5 @@
-// Fix: Changed component to extend `Component` directly and updated import to resolve TypeScript error with `this.props`.
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+// Fix: Updated the component to extend `React.Component` and import `React` to resolve a TypeScript error where `this.props` was not being recognized.
+import React, { ErrorInfo, ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;
@@ -10,7 +10,7 @@ interface State {
   error: Error | null;
 }
 
-class ErrorBoundary extends Component<Props, State> {
+class ErrorBoundary extends React.Component<Props, State> {
   state: State = {
     hasError: false,
     error: null,
