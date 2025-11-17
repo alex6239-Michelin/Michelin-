@@ -1,17 +1,22 @@
-/// <reference types="vite/client" />
+// Fix: Manually define types for import.meta.env as a workaround for a broken TypeScript environment
+// where 'vite/client' types are not being loaded. This resolves the errors about 'vite/client'
+// not being found and 'env' not existing on 'ImportMeta'.
+declare interface ImportMeta {
+  readonly env: {
+      readonly VITE_API_KEY?: string;
+  };
+}
 
 import { GoogleGenAI, Type } from "@google/genai";
 import { type ChatMessage, type PracticeProblem, type TopicSummary } from '../types';
 
-// Use import.meta.env for standard Vite compatibility, with a fallback for other environments.
-const apiKey = import.meta.env.VITE_API_KEY || process.env.API_KEY;
+// Use import.meta.env for standard Vite compatibility.
+const apiKey = import.meta.env.VITE_API_KEY;
 
-
-if (!apiKey) {
-    // This error will be caught by the ErrorBoundary and display a helpful message.
-    throw new Error("VITE_API_KEY environment variable is not set. Please add it to your deployment settings.");
-}
-
+// The API key is intentionally allowed to be undefined here.
+// The GoogleGenAI library will handle this and throw an error only when an API call
+// is actually made, which will be caught gracefully by our handleApiError function.
+// This prevents the entire app from crashing with a blank page if the key is missing.
 const ai = new GoogleGenAI({ apiKey });
 
 
@@ -35,7 +40,7 @@ const handleApiError = (error: any, context: string): Error => {
     } else if (errorMessage.includes('429')) {
         message = '您的請求頻率過高，請稍後再試。';
     } else if (errorMessage.includes('API key not valid') || errorMessage.includes('API_KEY')) {
-        message = 'API 金鑰無效或未設置，請檢查您的環境設定。';
+        message = 'API 金鑰無效或未設置。請檢查您在 Vercel 中的 VITE_API_KEY 環境變數是否已正確設定。';
     }
     return new Error(message);
 };
