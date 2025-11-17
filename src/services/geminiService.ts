@@ -108,7 +108,7 @@ export const generateTopicSummary = async (topic: string): Promise<TopicSummary>
     
     const response = await ai.models.generateContent({
       model,
-      contents: prompt,
+      contents: { parts: [{ text: prompt }] },
       config: {
           responseMimeType: "application/json",
           responseSchema: {
@@ -149,7 +149,7 @@ export const generatePracticeProblem = async (topic: string, count: number): Pro
     
     const response = await ai.models.generateContent({
       model,
-      contents: prompt,
+      contents: { parts: [{ text: prompt }] },
       config: {
           responseMimeType: "application/json",
           responseSchema: {
@@ -216,13 +216,15 @@ export const generateSimulationCode = async (prompt: string): Promise<string> =>
 
       const response = await ai.models.generateContent({
           model,
-          contents: fullPrompt
+          contents: { parts: [{ text: fullPrompt }] }
       });
       const responseText = response.text;
       if (!responseText) {
           throw new Error('AI 回應無效，未包含任何程式碼。');
       }
-      return responseText;
+      // The model sometimes wraps the HTML in markdown, so we clean it.
+      const cleanedResponse = responseText.trim().replace(/^```html\n?/, '').replace(/```$/, '');
+      return cleanedResponse;
     } catch (error) {
       throw handleApiError(error, 'generateSimulationCode');
     }
