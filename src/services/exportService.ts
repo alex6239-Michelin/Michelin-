@@ -4,51 +4,64 @@ declare const jspdf: any;
 declare const html2canvas: any;
 
 /**
- * Creates a string of CSS styles to be embedded in the PDF for better formatting,
- * mimicking the style of the provided physics learning pack image.
+ * Creates a string of CSS styles to be embedded in the PDF for better formatting.
  * @returns A <style> tag with CSS rules as a string.
  */
 const getPdfStyles = (): string => `
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700&display=swap');
     body { 
       font-family: 'Noto Sans TC', sans-serif;
-      font-size: 11pt;
-      line-height: 1.6;
-      color: #333333;
+      font-size: 10.5pt;
+      line-height: 1.8;
+      color: #333;
+      background-color: #ffffff;
+      margin: 0;
+      padding: 0;
+    }
+    .pdf-container {
+      padding: 15mm; /* Add padding to match PDF margins */
+    }
+    .pdf-block {
+      page-break-inside: avoid;
     }
     h1, h2, h3, h4, strong {
       font-family: 'Noto Sans TC', sans-serif; 
       font-weight: 700;
-      margin: 0;
+      margin: 0 0 10px 0;
       padding: 0;
     }
     h1 {
-      font-size: 26pt;
-      color: #333;
+      font-family: 'Noto Serif TC', serif;
+      font-size: 24pt;
+      color: #C2185B; /* Princess Pink */
       text-align: left;
-      margin-bottom: 10px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid #ef4444; /* Red color from image */
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 2.5px solid #F8BBD0; /* Light Pink */
     }
     h2 {
+      font-family: 'Noto Sans TC', sans-serif;
       font-size: 18pt;
-      color: #ffffff;
-      background-color: #ef4444; /* Red color from image */
+      font-weight: 700;
+      color: #AD1457; /* Darker Pink */
+      background-color: #FCE4EC; /* Very Light Pink */
       margin-top: 25px;
       margin-bottom: 20px;
       padding: 8px 16px;
       border-radius: 8px;
+      border-left: 6px solid #E91E63;
     }
     h3 {
       font-size: 14pt;
-      color: #d32f2f; /* Darker red for subsection titles */
+      color: #5E35B1; /* Deep Purple */
       font-weight: 700;
       margin-top: 20px;
       margin-bottom: 10px;
     }
     h4 {
       font-size: 12pt;
-      color: #4a5568;
+      color: #4527A0; /* Darker Purple */
       font-weight: 700;
       margin-bottom: 5px;
     }
@@ -56,7 +69,7 @@ const getPdfStyles = (): string => `
       margin-bottom: 12px;
     }
     a {
-      color: #2b6cb0;
+      color: #1E88E5; /* Bright Blue */
       text-decoration: none;
       font-weight: 500;
     }
@@ -65,24 +78,16 @@ const getPdfStyles = (): string => `
     }
     hr {
       border: 0;
-      border-top: 1px solid #e2e8f0;
-      margin: 30px 0;
-    }
-    /* Remove the boxy style from content blocks */
-    div[style*="page-break-inside: avoid;"],
-    article[style*="page-break-inside: avoid;"] {
-      background-color: transparent;
-      border: none;
-      border-radius: 0;
-      padding: 0;
-      margin-bottom: 25px;
+      border-top: 1px solid #E0E0E0;
+      margin: 25px 0;
     }
     img {
       max-width: 100%;
       height: auto;
       display: block;
       margin: 15px auto;
-      border-radius: 4px;
+      border-radius: 8px;
+      border: 1px solid #eee;
     }
   </style>
 `;
@@ -109,13 +114,16 @@ export const exportToPdf = async (htmlContent: string, filename: string): Promis
     tempContainer.style.left = '-9999px';
     tempContainer.style.width = '800px'; // A fixed width for consistent rendering
     tempContainer.style.background = 'white';
-    document.body.appendChild(tempContainer);
     
     const sourceContainer = document.createElement('div');
-    sourceContainer.innerHTML = getPdfStyles() + htmlContent;
+    sourceContainer.innerHTML = getPdfStyles() + `<div class="pdf-container">${htmlContent}</div>`;
+    
+    // Append to body to ensure styles are applied
+    document.body.appendChild(sourceContainer);
     
     // Select all logical content blocks to render individually
-    const contentBlocks = Array.from(sourceContainer.querySelectorAll('div[style*="page-break-inside: avoid;"], article[style*="page-break-inside: avoid;"], h1, h2'));
+    // Use a specific class .pdf-block for better control
+    const contentBlocks = Array.from(sourceContainer.querySelectorAll('.pdf-block, h1, h2'));
 
     // If no specific blocks are found, treat the whole content as one block
     if (contentBlocks.length === 0) {
@@ -123,11 +131,7 @@ export const exportToPdf = async (htmlContent: string, filename: string): Promis
     }
     
     for (const block of contentBlocks) {
-      // Use a clean container for each canvas render
-      tempContainer.innerHTML = '';
-      tempContainer.appendChild(block.cloneNode(true));
-      
-      const canvas = await html2canvas(tempContainer, { scale: 2, useCORS: true });
+      const canvas = await html2canvas(block as HTMLElement, { scale: 2.5, useCORS: true });
       const imgData = canvas.toDataURL('image/png');
       const elementHeightMM = (canvas.height / canvas.width) * usableWidthMM;
       
@@ -137,10 +141,10 @@ export const exportToPdf = async (htmlContent: string, filename: string): Promis
       }
       
       pdf.addImage(imgData, 'PNG', margin, currentY, usableWidthMM, elementHeightMM);
-      currentY += elementHeightMM + 4; // Add a 4mm gap between blocks
+      currentY += elementHeightMM + 2; // Add a small gap between blocks
     }
 
-    document.body.removeChild(tempContainer);
+    document.body.removeChild(sourceContainer);
     pdf.save(`${filename}.pdf`);
 
   } catch (error) {

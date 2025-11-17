@@ -76,15 +76,15 @@ const ProblemGenerator: React.FC = () => {
     
     const summaryHtml = summary ? `
         <h2>${topic} - 核心總整理</h2>
-        <div style="margin-bottom: 20px; padding: 10px; page-break-inside: avoid;">
+        <div class="pdf-block">
             <h3>⭐ 重點觀念叮嚀</h3>
             <p>${summary.keyConcepts.replace(/\n/g, '<br>')}</p>
         </div>
-        <div style="margin-bottom: 20px; padding: 10px; page-break-inside: avoid;">
+        <div class="pdf-block">
             <h3>📏 必背公式整理</h3>
             <p>${summary.formulas.replace(/\n/g, '<br>')}</p>
         </div>
-        <div style="margin-bottom: 30px; padding: 10px; page-break-inside: avoid;">
+        <div class="pdf-block" style="margin-bottom: 20px;">
             <h3>🔑 重要題型解題技巧</h3>
             <p>${summary.solvingTechniques.replace(/\n/g, '<br>')}</p>
         </div>
@@ -96,20 +96,21 @@ const ProblemGenerator: React.FC = () => {
         const optionsHtml = Object.entries(options).map(([key, value]) => 
           `<p style="margin: 4px 0;"><strong>${key.toUpperCase()}.</strong> ${value}</p>`
         ).join('');
-        const youtubeHtml = youtubeLink ? `<p><strong>參考影片：</strong><a href="${youtubeLink}">${youtubeLink}</a></p>` : '';
+        const youtubeHtml = youtubeLink ? `<div class="pdf-block"><p><strong>參考影片：</strong><a href="${youtubeLink}">${youtubeLink}</a></p></div>` : '';
 
         return `
-        <article style="margin-bottom: 30px; page-break-inside: avoid;">
-            <h3>第 ${index + 1} 題：</h3>
-            <p>${question.replace(/\n/g, '<br>')}</p>
+        <div class="pdf-block"><h3>第 ${index + 1} 題：</h3></div>
+        <div class="pdf-block"><p>${question.replace(/\n/g, '<br>')}</p></div>
+        <div class="pdf-block">
             <h4>選項：</h4>
             ${optionsHtml}
-            <br>
+        </div>
+        <div class="pdf-block" style="margin-top: 15px;">
             <p><strong>正確答案：${correctAnswer.toUpperCase()}</strong></p>
             <h4>詳解：</h4>
             <p>${solution.replace(/\n/g, '<br>')}</p>
-            ${youtubeHtml}
-        </article>
+        </div>
+        ${youtubeHtml}
         `;
     }).join('<hr style="margin: 20px 0;">');
 

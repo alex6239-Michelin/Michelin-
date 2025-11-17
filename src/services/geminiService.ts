@@ -96,7 +96,7 @@ export const getSocraticResponse = async (history: ChatMessage[], newUserMessage
 
 export const generateTopicSummary = async (topic: string): Promise<TopicSummary> => {
   try {
-    const model = 'gemini-2.5-pro';
+    const model = 'gemini-2.5-flash'; // Switched to Flash for consistency and speed
     const prompt = `You are an expert on the Taiwanese university entrance exam (學測) for Physics. Your task is to generate a concise yet comprehensive "Topic Summary" for the topic: '${topic}'.
           
     The summary must be in Traditional Chinese and contain three distinct sections:
@@ -136,7 +136,7 @@ export const generateTopicSummary = async (topic: string): Promise<TopicSummary>
 
 export const generatePracticeProblem = async (topic: string, count: number): Promise<PracticeProblem[]> => {
   try {
-    const model = 'gemini-2.5-pro';
+    const model = 'gemini-2.5-flash'; // Switched from Pro to Flash for stability
     const prompt = `You are an expert on the Taiwanese university entrance exam (學測) for Physics. Your task is to generate ${count} high-quality practice problems for the topic: '${topic}'.
           
     For each problem, you MUST strictly adhere to the following requirements:
@@ -211,17 +211,22 @@ export const analyzeDiagram = async (imageFile: File, prompt: string): Promise<s
 
 export const generateSimulationCode = async (prompt: string): Promise<string> => {
     try {
-      const model = 'gemini-2.5-pro';
-      const systemInstruction = `You are a senior web developer specializing in physics simulations. Your task is to generate a single, self-contained HTML file that includes HTML, CSS, and JavaScript to create an interactive physics simulation. The code should be well-commented, especially the JavaScript section explaining the physics formulas.`;
-      const userPrompt = `Create a simulation for: '${prompt}'. The simulation must be visually clear and allow for user interaction if possible (e.g., sliders for parameters). Ensure the canvas is visible with a border and the whole simulation is centered. Please use inline CSS or a <style> tag; do not rely on external libraries like Tailwind CSS.`;
+      const model = 'gemini-2.5-flash'; // Switched from Pro to Flash for stability
+      const fullPrompt = `You are a senior web developer specializing in physics simulations. Your task is to generate a single, self-contained HTML file. This file must include all necessary HTML, CSS (in a <style> tag, no external libraries like Tailwind), and JavaScript to create an interactive physics simulation based on the user's request: '${prompt}'.
+
+      **Requirements:**
+      1.  **Self-Contained:** Everything in one HTML file.
+      2.  **No External CSS/JS:** Use a <style> tag for CSS.
+      3.  **Visuals:** The simulation canvas must be clearly visible with a border and centered on the page.
+      4.  **Interactivity:** If the topic allows, include interactive elements like sliders or buttons to change parameters.
+      5.  **Comments:** Add comments in the JavaScript to explain the physics formulas being used.
+      
+      Output ONLY the raw HTML code. Do not wrap it in markdown fences like \`\`\`html.`;
 
 
       const response = await ai.models.generateContent({
           model,
-          contents: userPrompt,
-          config: {
-            systemInstruction,
-          }
+          contents: fullPrompt
       });
       const responseText = response.text;
       if (!responseText) {

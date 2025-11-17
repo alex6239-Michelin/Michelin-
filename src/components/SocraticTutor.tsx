@@ -93,7 +93,7 @@ const SocraticTutor: React.FC = () => {
   const handleExport = () => {
     const title = '<h1>蘇格拉底導師對話記錄</h1>';
     const conversationHtml = messages.map(msg => `
-      <div style="margin-bottom: 12px; page-break-inside: avoid;">
+      <div class="pdf-block" style="margin-bottom: 12px;">
         <p><strong>${msg.role === 'user' ? '你' : '蘇格拉底導師'}:</strong></p>
         <div>${msg.text.replace(/\n/g, '<br>')}</div>
       </div>

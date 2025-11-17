@@ -56,15 +56,15 @@ const DiagramAnalyzer: React.FC = () => {
             <div>
                 <h1>圖表分析報告</h1>
                 <hr>
-                <div style="page-break-inside: avoid; margin-bottom: 20px;">
+                <div class="pdf-block" style="margin-bottom: 20px;">
                     <h3>學生的問題：</h3>
                     <p>${prompt}</p>
                 </div>
-                <div style="page-break-inside: avoid; margin-bottom: 20px;">
+                <div class="pdf-block" style="margin-bottom: 20px;">
                     <h3>上傳的圖表：</h3>
                     <img src="${imageBase64}" alt="student diagram" style="max-width: 500px;" />
                 </div>
-                <div style="page-break-inside: avoid; margin-bottom: 20px;">
+                <div class="pdf-block" style="margin-bottom: 20px;">
                     <h3>AI 教授的回饋：</h3>
                     <p>${feedback.replace(/\n/g, '<br>')}</p>
                 </div>
