@@ -1,13 +1,15 @@
-declare var process: any;
+/// <reference types="vite/client" />
 
 import { GoogleGenAI, Type } from "@google/genai";
 import { type ChatMessage, type PracticeProblem, type TopicSummary } from '../types';
 
-const apiKey = process.env.API_KEY;
+// Use import.meta.env for standard Vite compatibility, with a fallback for other environments.
+const apiKey = import.meta.env.VITE_API_KEY || process.env.API_KEY;
+
 
 if (!apiKey) {
-    // This error will halt the application if the key is not set.
-    throw new Error("API_KEY environment variable is not set. Please check your project settings.");
+    // This error will be caught by the ErrorBoundary and display a helpful message.
+    throw new Error("VITE_API_KEY environment variable is not set. Please add it to your deployment settings.");
 }
 
 const ai = new GoogleGenAI({ apiKey });
