@@ -25,7 +25,7 @@ const ai = new GoogleGenAI({ apiKey });
 const generateContentWithRetry = async (
     params: any, 
     retries = 5, 
-    delay = 2000
+    delay = 3000
 ): Promise<GenerateContentResponse> => {
     let lastError: any;
     for (let i = 0; i < retries; i++) {
@@ -114,28 +114,51 @@ const fileToGenerativePart = async (file: File) => {
 };
 
 export const getSocraticResponse = async (history: ChatMessage[], newUserMessage: string): Promise<string> => {
-  try {
-    const model = 'gemini-2.5-flash';
-    const chat = ai.chats.create({
-      model,
-      config: {
-          systemInstruction: `You are an expert high school physics tutor for Taiwanese students using the 18 curriculum. Your name is Socrates. Your goal is to help students overcome common physics misconceptions. You must NEVER give the direct answer. Instead, use the Socratic method to ask guiding, targeted questions that help the student discover their own error and arrive at the correct understanding. Refer to formulas they should know. Keep your responses concise and focused on one question at a time. Be encouraging and patient. Respond in Traditional Chinese.`,
-      },
-      history: history.map(msg => ({
-        role: msg.role,
-        parts: [{ text: msg.text }]
-      })),
-    });
+  const retries = 5;
+  let delay = 3000;
+  let lastError: any;
 
-    const result = await chat.sendMessage({ message: newUserMessage });
-    const responseText = result.text;
-    if (!responseText) {
-        throw new Error('AI 回應無效，未包含任何文字。');
+  for (let i = 0; i < retries; i++) {
+    try {
+      const model = 'gemini-2.5-flash';
+      const chat = ai.chats.create({
+        model,
+        config: {
+            systemInstruction: `You are an expert high school physics tutor for Taiwanese students using the 18 curriculum. Your name is Socrates. Your goal is to help students overcome common physics misconceptions. You must NEVER give the direct answer. Instead, use the Socratic method to ask guiding, targeted questions that help the student discover their own error and arrive at the correct understanding. Refer to formulas they should know. Keep your responses concise and focused on one question at a time. Be encouraging and patient. Respond in Traditional Chinese.`,
+        },
+        history: history.map(msg => ({
+          role: msg.role,
+          parts: [{ text: msg.text }]
+        })),
+      });
+
+      const result = await chat.sendMessage({ message: newUserMessage });
+      const responseText = result.text;
+      if (!responseText) {
+          throw new Error('AI 回應無效，未包含任何文字。'); // This will be caught and potentially retried
+      }
+      return responseText;
+
+    } catch (error: any) {
+      lastError = error;
+      const errorMessage = error.toString();
+      // Also consider "empty response" as a potentially transient, retryable issue.
+      const isRetryable = errorMessage.includes('500') || errorMessage.includes('503') || errorMessage.includes('429') || errorMessage.includes('Rpc failed') || errorMessage.includes('AI 回應無效');
+
+      if (isRetryable && i < retries - 1) {
+          const jitter = Math.floor(Math.random() * 1000);
+          const nextDelay = delay + jitter;
+          console.warn(`Socratic response attempt ${i + 1} failed with a retryable error. Retrying in ${nextDelay}ms...`);
+          await new Promise(res => setTimeout(res, nextDelay));
+          delay *= 2;
+      } else {
+          // On the last attempt or for a non-retryable error, throw the last captured error.
+          throw handleApiError(lastError, 'getSocraticResponse');
+      }
     }
-    return responseText;
-  } catch(error) {
-    throw handleApiError(error, 'getSocraticResponse');
   }
+  // This line should not be reachable.
+  throw handleApiError(lastError, 'getSocraticResponse');
 };
 
 export const generateTopicSummary = async (topic: string): Promise<TopicSummary> => {
