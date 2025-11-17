@@ -1,14 +1,20 @@
+// FIX: Use `process.env.API_KEY` and declare `process` to align with the execution environment
+// which injects environment variables via a global `process` object. This resolves the runtime
+// error "Cannot read properties of undefined (reading 'VITE_API_KEY')" and the associated 
+// TypeScript "Cannot find name 'process'" error during build.
+declare var process: any;
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { type ChatMessage, type PracticeProblem, type TopicSummary } from '../types';
 
-// FIX: Per coding guidelines, the API key must be retrieved from process.env.API_KEY.
-// The use of import.meta.env is incorrect and was causing a build error.
-if (!process.env.API_KEY) {
+const apiKey = process.env.API_KEY;
+
+if (!apiKey) {
     // This error will halt the application if the key is not set.
-    throw new Error("API_KEY environment variable is not set");
+    throw new Error("API_KEY environment variable is not set. Please check your project settings.");
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey });
 
 
 /**

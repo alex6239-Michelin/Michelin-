@@ -1,19 +1,29 @@
-import { GoogleGenAI, GenerateContentResponse, Type } from "@google/genai";
+// FIX: Use `process.env.API_KEY` and declare `process` to align with the execution environment
+// which injects environment variables via a global `process` object. This resolves the runtime
+// error "Cannot read properties of undefined (reading 'VITE_API_KEY')" and the associated 
+// TypeScript "Cannot find name 'process'" error during build.
+declare var process: any;
+
+import { GoogleGenAI, Type } from "@google/genai";
 import { type ChatMessage, type PracticeProblem, type TopicSummary } from '../types';
 
-if (!process.env.API_KEY) {
-    throw new Error("API_KEY environment variable is not set");
+const apiKey = process.env.API_KEY;
+
+if (!apiKey) {
+    // This error will halt the application if the key is not set.
+    throw new Error("API_KEY environment variable is not set. Please check your project settings.");
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey });
 
 /**
- * Handles API errors by creating user-friendly, context-specific messages.
+ * Handles API errors by creating user-friendly, context-specific error objects.
+ * This makes the control flow clearer for TypeScript.
  * @param error The original error object.
  * @param context A string describing the operation that failed.
- * @returns Never, as it always throws a new Error.
+ * @returns An Error object with a user-friendly message.
  */
-const handleApiError = (error: any, context: string): never => {
+const handleApiError = (error: any, context: string): Error => {
     console.error(`Error in ${context}:`, error);
     let message = `從 AI 伺服器獲取資料時發生錯誤。請稍後再試。`;
     
@@ -25,10 +35,10 @@ const handleApiError = (error: any, context: string): never => {
          message = '向 AI 伺服器發送的請求格式有誤 (錯誤 400)，這可能是由於輸入內容包含不安全或不支援的字詞。';
     } else if (errorMessage.includes('429')) {
         message = '您的請求頻率過高，請稍後再試。';
-    } else if (errorMessage.includes('API_KEY')) {
+    } else if (errorMessage.includes('API key not valid') || errorMessage.includes('API_KEY')) {
         message = 'API 金鑰無效或未設置，請檢查您的環境設定。';
     }
-    throw new Error(message);
+    return new Error(message);
 };
 
 /**
@@ -76,7 +86,8 @@ export const getSocraticResponse = async (history: ChatMessage[], newUserMessage
     const result = await chat.sendMessage({ message: newUserMessage });
     return result.text;
   } catch(error) {
-    handleApiError(error, 'getSocraticResponse');
+    // FIX: Throwing the handled error allows UI components to catch and display it.
+    throw handleApiError(error, 'getSocraticResponse');
   }
 };
 
@@ -111,7 +122,8 @@ export const generateTopicSummary = async (topic: string): Promise<TopicSummary>
     const data = parseJsonFromResponse<TopicSummary>(response.text);
     return data;
   } catch(error) {
-    handleApiError(error, 'generateTopicSummary');
+    // FIX: Throwing the handled error allows UI components to catch and display it.
+    throw handleApiError(error, 'generateTopicSummary');
   }
 };
 
@@ -162,7 +174,8 @@ export const generatePracticeProblem = async (topic: string, count: number): Pro
     const data = parseJsonFromResponse<PracticeProblem[]>(response.text);
     return data;
   } catch (error) {
-    handleApiError(error, 'generatePracticeProblem');
+    // FIX: Throwing the handled error allows UI components to catch and display it.
+    throw handleApiError(error, 'generatePracticeProblem');
   }
 };
 
@@ -178,7 +191,8 @@ export const analyzeDiagram = async (imageFile: File, prompt: string): Promise<s
       });
       return response.text;
     } catch (error) {
-      handleApiError(error, 'analyzeDiagram');
+      // FIX: Throwing the handled error allows UI components to catch and display it.
+      throw handleApiError(error, 'analyzeDiagram');
     }
 };
 
@@ -194,6 +208,7 @@ export const generateSimulationCode = async (prompt: string): Promise<string> =>
       });
       return response.text;
     } catch (error) {
-      handleApiError(error, 'generateSimulationCode');
+      // FIX: Throwing the handled error allows UI components to catch and display it.
+      throw handleApiError(error, 'generateSimulationCode');
     }
 };
