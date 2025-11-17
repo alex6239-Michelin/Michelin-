@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI 物理導師 - 公主殿下版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --bg-light: #FFF0F5; /* Lavender Blush */
+        --bg-dark: #2C2A4A; /* Dark Purple */
+        --card-light: #ffffff;
+        --card-dark: #4F4C7A;
+        --text-light: #4A4A4A;
+        --text-dark: #EAE6FF;
+        --primary-light: #FF69B4; /* Hot Pink */
+        --primary-dark: #FFA6D5;
+        --accent-gradient: linear-gradient(135deg, #FF69B4, #C973FF, #7A9DFF);
+        --font-family: 'Noto Sans TC', sans-serif;
+      }
+
+      body {
+        font-family: var(--font-family);
+        background-color: var(--bg-light);
+        color: var(--text-light);
+        position: relative;
+        overflow: hidden;
+      }
+      
+      body::before {
+        content: '';
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="10" height="10"><path d="M5 0 L6.1 3.9 L10 5 L6.1 6.1 L5 10 L3.9 6.1 L0 5 L3.9 3.9 Z" fill="rgba(255, 105, 180, 0.2)"/></svg>');
+        animation: sparkle 20s linear infinite;
+        z-index: -1;
+      }
+
+      @keyframes sparkle {
+        from { background-position: 0 0; }
+        to { background-position: -200px -200px; }
+      }
+      
+      html.dark body {
+        background-color: var(--bg-dark);
+        color: var(--text-dark);
+      }
+      
+      html.dark body::before {
+         background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="10" height="10"><path d="M5 0 L6.1 3.9 L10 5 L6.1 6.1 L5 10 L3.9 6.1 L0 5 L3.9 3.9 Z" fill="rgba(255, 179, 221, 0.1)"/></svg>');
+      }
+
+      /* Component Overrides */
+      .bg-slate-50 { background-color: var(--bg-light); }
+      html.dark .dark\:bg-slate-900 { background-color: var(--bg-dark); }
+      .bg-white { background-color: var(--card-light); }
+      html.dark .dark\:bg-slate-800 { background-color: var(--card-dark); }
+      .bg-slate-100 { background-color: rgba(255, 255, 255, 0.6); backdrop-filter: blur(10px); }
+      html.dark .dark\:bg-slate-900\/70 { background-color: rgba(44, 42, 74, 0.7); backdrop-filter: blur(10px); }
+      .bg-slate-200 { background-color: #FCE4EC; } /* Light Pink */
+      html.dark .dark\:bg-slate-700 { background-color: #5C5A8D; }
+      .text-slate-800 { color: #333; }
+      html.dark .dark\:text-slate-200 { color: var(--text-dark); }
+      .text-slate-500 { color: #8C5E8A; }
+      html.dark .dark\:text-slate-400 { color: #BDA5D8; }
+       .text-slate-600 { color: #6D2A5B; }
+      html.dark .dark\:text-slate-300 { color: #D7C6E9; }
+
+      /* Buttons */
+      .bg-blue-600 {
+        background: var(--accent-gradient);
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px 0 rgba(255, 105, 180, 0.4);
+      }
+      .bg-blue-600:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px 0 rgba(201, 115, 255, 0.5);
+      }
+      .disabled\:bg-slate-400 {
+        background: #D1C4E9;
+      }
+
+      /* Inputs & Cards */
+      .rounded-lg { border-radius: 12px; }
+      .rounded-2xl { border-radius: 16px; }
+      .focus\:ring-blue-500:focus {
+        --tw-ring-color: var(--primary-light);
+        box-shadow: 0 0 0 2px var(--bg-light), 0 0 0 4px var(--primary-light);
+      }
+      html.dark .focus\:ring-blue-500:focus {
+        --tw-ring-color: var(--primary-dark);
+        box-shadow: 0 0 0 2px var(--bg-dark), 0 0 0 4px var(--primary-dark);
+      }
+      
+      .border-dashed {
+        border-style: solid;
+        border-width: 1px;
+        border-color: rgba(255, 105, 180, 0.4);
+        background: rgba(255, 240, 245, 0.5);
+        transition: all 0.3s ease;
+      }
+      html.dark .dark\:border-slate-600 {
+        border-color: rgba(255, 166, 213, 0.4);
+        background: rgba(79, 76, 122, 0.5);
+      }
+      .hover\:border-blue-500:hover {
+        border-color: var(--primary-light) !important;
+        transform: scale(1.02);
+      }
+      
+      /* Chat Bubbles */
+      .bg-blue-600.text-white.rounded-br-none {
+         background: var(--accent-gradient);
+         color: white;
+         border-radius: 1.5rem 1.5rem 0.25rem 1.5rem;
+      }
+      .bg-slate-200.dark\:bg-slate-700.rounded-bl-none {
+        background-color: #FCE4EC;
+        border-radius: 1.5rem 1.5rem 1.5rem 0.25rem;
+      }
+       html.dark .bg-slate-200.dark\:bg-slate-700.rounded-bl-none {
+        background-color: #5C5A8D;
+       }
+       
+       /* Scrollbar */
+      ::-webkit-scrollbar { width: 8px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: rgba(255, 105, 180, 0.5); border-radius: 10px; }
+      ::-webkit-scrollbar-thumb:hover { background: var(--primary-light); }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.1"
+  }
+}
+</script>
+</head>
+  <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+    <script>
+      // Simple dark mode toggle logic
+      // In a real app, you'd save this to localStorage
+      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.documentElement.classList.add('dark');
+      }
+    </script>
+  </body>
+</html>
