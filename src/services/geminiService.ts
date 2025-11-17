@@ -1,7 +1,3 @@
-// FIX: Use `process.env.API_KEY` and declare `process` to align with the execution environment
-// which injects environment variables via a global `process` object. This resolves the runtime
-// error "Cannot read properties of undefined (reading 'VITE_API_KEY')" and the associated 
-// TypeScript "Cannot find name 'process'" error during build.
 declare var process: any;
 
 import { GoogleGenAI, Type } from "@google/genai";

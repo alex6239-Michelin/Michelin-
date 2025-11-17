@@ -8,7 +8,6 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) => {
-  // FIX: Replaced JSX.Element with React.ReactElement to resolve namespace issue.
   const navItems: { id: View; text: string; icon: React.ReactElement }[] = [
     { id: 'tutor', text: '蘇格拉底導師', icon: <TutorIcon /> },
     { id: 'practice', text: '動態練習題', icon: <PracticeIcon /> },

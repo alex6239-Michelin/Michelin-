@@ -1,7 +1,3 @@
-// FIX: Use `process.env.API_KEY` and declare `process` to align with the execution environment
-// which injects environment variables via a global `process` object. This resolves the runtime
-// error "Cannot read properties of undefined (reading 'VITE_API_KEY')" and the associated 
-// TypeScript "Cannot find name 'process'" error during build.
 declare var process: any;
 
 import { GoogleGenAI, Type } from "@google/genai";
@@ -86,7 +82,6 @@ export const getSocraticResponse = async (history: ChatMessage[], newUserMessage
     const result = await chat.sendMessage({ message: newUserMessage });
     return result.text;
   } catch(error) {
-    // FIX: Throwing the handled error allows UI components to catch and display it.
     throw handleApiError(error, 'getSocraticResponse');
   }
 };
@@ -122,7 +117,6 @@ export const generateTopicSummary = async (topic: string): Promise<TopicSummary>
     const data = parseJsonFromResponse<TopicSummary>(response.text);
     return data;
   } catch(error) {
-    // FIX: Throwing the handled error allows UI components to catch and display it.
     throw handleApiError(error, 'generateTopicSummary');
   }
 };
@@ -174,7 +168,6 @@ export const generatePracticeProblem = async (topic: string, count: number): Pro
     const data = parseJsonFromResponse<PracticeProblem[]>(response.text);
     return data;
   } catch (error) {
-    // FIX: Throwing the handled error allows UI components to catch and display it.
     throw handleApiError(error, 'generatePracticeProblem');
   }
 };
@@ -191,7 +184,6 @@ export const analyzeDiagram = async (imageFile: File, prompt: string): Promise<s
       });
       return response.text;
     } catch (error) {
-      // FIX: Throwing the handled error allows UI components to catch and display it.
       throw handleApiError(error, 'analyzeDiagram');
     }
 };
@@ -208,7 +200,6 @@ export const generateSimulationCode = async (prompt: string): Promise<string> =>
       });
       return response.text;
     } catch (error) {
-      // FIX: Throwing the handled error allows UI components to catch and display it.
       throw handleApiError(error, 'generateSimulationCode');
     }
 };
