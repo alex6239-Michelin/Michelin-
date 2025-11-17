@@ -81,7 +81,11 @@ export const getSocraticResponse = async (history: ChatMessage[], newUserMessage
     });
 
     const result = await chat.sendMessage({ message: newUserMessage });
-    return result.text;
+    const responseText = result.text;
+    if (!responseText) {
+        throw new Error('AI 回應無效，未包含任何文字。');
+    }
+    return responseText;
   } catch(error) {
     throw handleApiError(error, 'getSocraticResponse');
   }
@@ -115,7 +119,11 @@ export const generateTopicSummary = async (topic: string): Promise<TopicSummary>
           },
       },
     });
-    const data = parseJsonFromResponse<TopicSummary>(response.text);
+    const responseText = response.text;
+    if (!responseText) {
+        throw new Error('AI 回應無效，未包含任何 JSON 資料。');
+    }
+    const data = parseJsonFromResponse<TopicSummary>(responseText);
     return data;
   } catch(error) {
     throw handleApiError(error, 'generateTopicSummary');
@@ -166,7 +174,11 @@ export const generatePracticeProblem = async (topic: string, count: number): Pro
           },
       },
     });
-    const data = parseJsonFromResponse<PracticeProblem[]>(response.text);
+    const responseText = response.text;
+    if (!responseText) {
+        throw new Error('AI 回應無效，未包含任何 JSON 資料。');
+    }
+    const data = parseJsonFromResponse<PracticeProblem[]>(responseText);
     return data;
   } catch (error) {
     throw handleApiError(error, 'generatePracticeProblem');
@@ -183,7 +195,11 @@ export const analyzeDiagram = async (imageFile: File, prompt: string): Promise<s
           model,
           contents: { parts: [{text: fullPrompt}, imagePart] },
       });
-      return response.text;
+      const responseText = response.text;
+      if (!responseText) {
+          throw new Error('AI 回應無效，未包含任何分析文字。');
+      }
+      return responseText;
     } catch (error) {
       throw handleApiError(error, 'analyzeDiagram');
     }
@@ -199,7 +215,11 @@ export const generateSimulationCode = async (prompt: string): Promise<string> =>
           model,
           contents: fullPrompt
       });
-      return response.text;
+      const responseText = response.text;
+      if (!responseText) {
+          throw new Error('AI 回應無效，未包含任何程式碼。');
+      }
+      return responseText;
     } catch (error) {
       throw handleApiError(error, 'generateSimulationCode');
     }
