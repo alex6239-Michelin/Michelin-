@@ -2,10 +2,22 @@ import React, { useState, useRef, useEffect } from 'react';
 import { type ChatMessage } from '../types';
 import { getSocraticResponse } from '../services/geminiService';
 import { exportToPdf } from '../services/exportService';
-import { SendIcon, UserIcon, ModelIcon, ExportIcon } from './icons';
+import { SendIcon, UserIcon, ModelIcon, ExportIcon, CopyIcon, CheckIcon } from './icons';
 
 const ChatBubble: React.FC<{ message: ChatMessage }> = ({ message }) => {
   const isUser = message.role === 'user';
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleCopy = () => {
+    if (isCopied) return;
+    navigator.clipboard.writeText(message.text).then(() => {
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    }).catch(err => {
+      console.error('Failed to copy text: ', err);
+    });
+  };
+
   return (
     <div className={`flex items-start gap-4 my-4 ${isUser ? 'justify-end' : ''}`}>
       {!isUser && (
@@ -13,16 +25,29 @@ const ChatBubble: React.FC<{ message: ChatMessage }> = ({ message }) => {
           <ModelIcon />
         </div>
       )}
-      <div
-        className={`max-w-xl p-4 shadow-md ${
-          isUser
-            ? 'bg-blue-600 text-white rounded-br-none'
-            : 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-bl-none'
-        }`}
-      >
-        <p className="whitespace-pre-wrap">{message.text}</p>
+      
+      <div className={`group flex items-end gap-2 ${isUser ? 'flex-row-reverse' : ''}`}>
+        <div
+          className={`max-w-xl p-4 shadow-md ${
+            isUser
+              ? 'bg-blue-600 text-white rounded-br-none'
+              : 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-bl-none'
+          }`}
+        >
+          <p className="whitespace-pre-wrap">{message.text}</p>
+        </div>
+        {!isUser && (
+          <button
+            onClick={handleCopy}
+            className={`flex-shrink-0 p-1.5 rounded-full transition-all duration-200 ${isCopied ? 'text-green-500 bg-green-100 dark:bg-green-900/50' : 'text-slate-400 opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-slate-300 dark:hover:bg-slate-600'}`}
+            aria-label={isCopied ? "已複製!" : "複製訊息"}
+          >
+            {isCopied ? <CheckIcon /> : <CopyIcon />}
+          </button>
+        )}
       </div>
-       {isUser && (
+
+      {isUser && (
         <div className="flex-shrink-0 w-10 h-10 rounded-full bg-pink-200 dark:bg-pink-800 flex items-center justify-center text-pink-600 dark:text-pink-300">
           <UserIcon />
         </div>
