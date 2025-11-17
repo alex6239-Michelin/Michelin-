@@ -108,7 +108,7 @@ export const generateTopicSummary = async (topic: string): Promise<TopicSummary>
     
     const response = await ai.models.generateContent({
       model,
-      contents: { parts: [{ text: prompt }] },
+      contents: prompt,
       config: {
           responseMimeType: "application/json",
           responseSchema: {
@@ -149,7 +149,7 @@ export const generatePracticeProblem = async (topic: string, count: number): Pro
     
     const response = await ai.models.generateContent({
       model,
-      contents: { parts: [{ text: prompt }] },
+      contents: prompt,
       config: {
           responseMimeType: "application/json",
           responseSchema: {
@@ -212,11 +212,16 @@ export const analyzeDiagram = async (imageFile: File, prompt: string): Promise<s
 export const generateSimulationCode = async (prompt: string): Promise<string> => {
     try {
       const model = 'gemini-2.5-pro';
-      const fullPrompt = `You are a senior web developer specializing in physics simulations. Generate a single, self-contained HTML file that includes HTML, CSS (using Tailwind classes if possible, but embed styles if necessary for canvas), and JavaScript to create an interactive simulation based on the following user request: '${prompt}'. The simulation must be visually clear and allow for user interaction if possible (e.g., sliders for parameters). The code should be well-commented to explain the physics formulas being used in the JavaScript section. Ensure the canvas is visible with a border and the whole simulation is centered.`;
+      const systemInstruction = `You are a senior web developer specializing in physics simulations. Your task is to generate a single, self-contained HTML file that includes HTML, CSS, and JavaScript to create an interactive physics simulation. The code should be well-commented, especially the JavaScript section explaining the physics formulas.`;
+      const userPrompt = `Create a simulation for: '${prompt}'. The simulation must be visually clear and allow for user interaction if possible (e.g., sliders for parameters). Ensure the canvas is visible with a border and the whole simulation is centered. Please use inline CSS or a <style> tag; do not rely on external libraries like Tailwind CSS.`;
+
 
       const response = await ai.models.generateContent({
           model,
-          contents: { parts: [{ text: fullPrompt }] }
+          contents: userPrompt,
+          config: {
+            systemInstruction,
+          }
       });
       const responseText = response.text;
       if (!responseText) {
