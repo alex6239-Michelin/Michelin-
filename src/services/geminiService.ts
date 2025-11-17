@@ -1,25 +1,23 @@
-
-import { GoogleGenAI, GenerateContentResponse, Type } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { type ChatMessage, type PracticeProblem, type TopicSummary } from '../types';
 
-// FIX: Adhering to guidelines to use process.env.API_KEY for the API key.
-const apiKey = process.env.API_KEY;
-
-if (!apiKey) {
+// FIX: Per coding guidelines, API key must be retrieved from process.env.API_KEY.
+// This also resolves the TypeScript error "Property 'env' does not exist on type 'ImportMeta'".
+if (!process.env.API_KEY) {
     // This error will stop the application from running if the key is missing.
-    throw new Error("API_KEY environment variable is not set. Please check your environment settings.");
+    throw new Error("API_KEY environment variable is not set. Please check your environment variable settings.");
 }
 
-// The API key is now sourced from process.env
-const ai = new GoogleGenAI({ apiKey });
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 /**
- * Handles API errors by creating user-friendly, context-specific messages.
+ * Handles API errors by creating user-friendly, context-specific error objects.
+ * This makes the control flow clearer for TypeScript.
  * @param error The original error object.
  * @param context A string describing the operation that failed.
- * @returns Never, as it always throws a new Error.
+ * @returns An Error object with a user-friendly message.
  */
-const handleApiError = (error: any, context: string): never => {
+const handleApiError = (error: any, context: string): Error => {
     console.error(`Error in ${context}:`, error);
     let message = `從 AI 伺服器獲取資料時發生錯誤。請稍後再試。`;
     
@@ -32,9 +30,10 @@ const handleApiError = (error: any, context: string): never => {
     } else if (errorMessage.includes('429')) {
         message = '您的請求頻率過高，請稍後再試。';
     } else if (errorMessage.includes('API key not valid') || errorMessage.includes('API_KEY')) {
+        // FIX: Made the API key error message more generic and not Vercel-specific.
         message = 'API 金鑰無效或未設置，請檢查您的環境設定。';
     }
-    throw new Error(message);
+    return new Error(message);
 };
 
 /**
@@ -82,7 +81,7 @@ export const getSocraticResponse = async (history: ChatMessage[], newUserMessage
     const result = await chat.sendMessage({ message: newUserMessage });
     return result.text;
   } catch(error) {
-    handleApiError(error, 'getSocraticResponse');
+    throw handleApiError(error, 'getSocraticResponse');
   }
 };
 
@@ -117,7 +116,7 @@ export const generateTopicSummary = async (topic: string): Promise<TopicSummary>
     const data = parseJsonFromResponse<TopicSummary>(response.text);
     return data;
   } catch(error) {
-    handleApiError(error, 'generateTopicSummary');
+    throw handleApiError(error, 'generateTopicSummary');
   }
 };
 
@@ -168,7 +167,7 @@ export const generatePracticeProblem = async (topic: string, count: number): Pro
     const data = parseJsonFromResponse<PracticeProblem[]>(response.text);
     return data;
   } catch (error) {
-    handleApiError(error, 'generatePracticeProblem');
+    throw handleApiError(error, 'generatePracticeProblem');
   }
 };
 
@@ -184,7 +183,7 @@ export const analyzeDiagram = async (imageFile: File, prompt: string): Promise<s
       });
       return response.text;
     } catch (error) {
-      handleApiError(error, 'analyzeDiagram');
+      throw handleApiError(error, 'analyzeDiagram');
     }
 };
 
@@ -200,6 +199,6 @@ export const generateSimulationCode = async (prompt: string): Promise<string> =>
       });
       return response.text;
     } catch (error) {
-      handleApiError(error, 'generateSimulationCode');
+      throw handleApiError(error, 'generateSimulationCode');
     }
 };
