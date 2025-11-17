@@ -1,14 +1,15 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { type ChatMessage, type PracticeProblem, type TopicSummary } from '../types';
 
-// FIX: Per coding guidelines, API key must be retrieved from process.env.API_KEY.
-// This also resolves the TypeScript error "Property 'env' does not exist on type 'ImportMeta'".
+// FIX: Per coding guidelines, the API key must be retrieved from process.env.API_KEY.
+// The use of import.meta.env is incorrect and was causing a build error.
 if (!process.env.API_KEY) {
-    // This error will stop the application from running if the key is missing.
-    throw new Error("API_KEY environment variable is not set. Please check your environment variable settings.");
+    // This error will halt the application if the key is not set.
+    throw new Error("API_KEY environment variable is not set");
 }
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
 
 /**
  * Handles API errors by creating user-friendly, context-specific error objects.
@@ -30,7 +31,6 @@ const handleApiError = (error: any, context: string): Error => {
     } else if (errorMessage.includes('429')) {
         message = '您的請求頻率過高，請稍後再試。';
     } else if (errorMessage.includes('API key not valid') || errorMessage.includes('API_KEY')) {
-        // FIX: Made the API key error message more generic and not Vercel-specific.
         message = 'API 金鑰無效或未設置，請檢查您的環境設定。';
     }
     return new Error(message);
