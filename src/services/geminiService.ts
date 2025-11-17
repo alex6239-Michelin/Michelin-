@@ -1,12 +1,15 @@
+
 import { GoogleGenAI, GenerateContentResponse, Type } from "@google/genai";
 import { type ChatMessage, type PracticeProblem, type TopicSummary } from '../types';
 
-// FIX: Switched from import.meta.env to process.env for API key access to align with guidelines and resolve TypeScript error.
+// FIX: Per project guidelines, the API key must be sourced from `process.env.API_KEY`.
+// This change aligns with the guidelines and resolves the TypeScript error.
 if (!process.env.API_KEY) {
     throw new Error("API_KEY environment variable is not set");
 }
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
 
 /**
  * Handles API errors by creating user-friendly, context-specific messages.
@@ -26,9 +29,8 @@ const handleApiError = (error: any, context: string): never => {
          message = '向 AI 伺服器發送的請求格式有誤 (錯誤 400)，這可能是由於輸入內容包含不安全或不支援的字詞。';
     } else if (errorMessage.includes('429')) {
         message = '您的請求頻率過高，請稍後再試。';
-    // FIX: Updated API key error message to be more generic and compliant with guidelines.
-    } else if (errorMessage.includes('API_KEY')) {
-        message = 'API 金鑰無效或未設置，請檢查您的環境設定。';
+    } else if (errorMessage.includes('API key not valid')) {
+        message = 'API 金鑰無效或已被拒絕。請再次檢查您在 Vercel 中設定的金鑰值是否複製完整且正確。';
     }
     throw new Error(message);
 };
