@@ -1,4 +1,3 @@
-// Fix: The `ErrorBoundary` component must extend `React.Component` to be a valid class component and have access to `this.props`.
 import React, { ErrorInfo, ReactNode } from 'react';
 
 interface Props {
@@ -10,7 +9,8 @@ interface State {
   error: Error | null;
 }
 
-// FIX: Extended React.Component to make this a valid class component.
+// Fix: To be a valid React Error Boundary, this class must extend React.Component.
+// This gives it access to component lifecycle methods and properties like `this.props`.
 class ErrorBoundary extends React.Component<Props, State> {
   state: State = {
     hasError: false,

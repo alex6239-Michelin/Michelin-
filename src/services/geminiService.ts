@@ -108,7 +108,7 @@ export const generateTopicSummary = async (topic: string): Promise<TopicSummary>
     
     const response = await ai.models.generateContent({
       model,
-      contents: prompt,
+      contents: { parts: [{ text: prompt }] },
       config: {
           responseMimeType: "application/json",
           responseSchema: {
@@ -149,7 +149,7 @@ export const generatePracticeProblem = async (topic: string, count: number): Pro
     
     const response = await ai.models.generateContent({
       model,
-      contents: prompt,
+      contents: { parts: [{ text: prompt }] },
       config: {
           responseMimeType: "application/json",
           responseSchema: {
@@ -216,7 +216,7 @@ export const generateSimulationCode = async (prompt: string): Promise<string> =>
 
       const response = await ai.models.generateContent({
           model,
-          contents: fullPrompt
+          contents: { parts: [{ text: fullPrompt }] }
       });
       const responseText = response.text;
       if (!responseText) {
