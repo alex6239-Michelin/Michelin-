@@ -10,6 +10,7 @@ interface State {
   error: Error | null;
 }
 
+// FIX: Extended React.Component to make this a valid class component.
 class ErrorBoundary extends React.Component<Props, State> {
   state: State = {
     hasError: false,
