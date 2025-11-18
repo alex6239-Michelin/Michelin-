@@ -58,7 +58,7 @@ const ChatBubble: React.FC<{ message: ChatMessage }> = ({ message }) => {
 
 const SocraticTutor: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: 'model', text: '你好！我是蘇格拉底導師。有什麼物理問題我可以引導你思考的嗎？' }
+    { role: 'model', text: '你好！我是藤永咲哉。有什麼物理問題我可以引導你思考的嗎？' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -91,10 +91,10 @@ const SocraticTutor: React.FC = () => {
   };
 
   const handleExport = () => {
-    const title = '<h1>蘇格拉底導師對話記錄</h1>';
+    const title = '<h1>與藤永咲哉老師的對話記錄</h1>';
     const conversationHtml = messages.map(msg => `
       <div class="pdf-block" style="margin-bottom: 12px;">
-        <p><strong>${msg.role === 'user' ? '你' : '蘇格拉底導師'}:</strong></p>
+        <p><strong>${msg.role === 'user' ? '你' : '藤永咲哉老師'}:</strong></p>
         <div>${msg.text.replace(/\n/g, '<br>')}</div>
       </div>
     `).join('');
@@ -112,7 +112,7 @@ const SocraticTutor: React.FC = () => {
     <div className="flex flex-col h-full p-4 md:p-6">
        <header className="mb-4 flex justify-between items-start">
         <div>
-            <h2 className="text-2xl font-bold text-slate-800 dark:text-white">蘇格拉底導師</h2>
+            <h2 className="text-2xl font-bold text-slate-800 dark:text-white">藤永咲哉老師</h2>
             <p className="text-slate-500 dark:text-slate-400">透過提問探索物理，而不是直接尋找答案。</p>
         </div>
         <div>

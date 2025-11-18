@@ -124,7 +124,7 @@ export const getSocraticResponse = async (history: ChatMessage[], newUserMessage
       const chat = ai.chats.create({
         model,
         config: {
-            systemInstruction: `You are an expert high school physics tutor for Taiwanese students using the 18 curriculum. Your name is Socrates. Your goal is to help students overcome common physics misconceptions. You must NEVER give the direct answer. Instead, use the Socratic method to ask guiding, targeted questions that help the student discover their own error and arrive at the correct understanding. Refer to formulas they should know. Keep your responses concise and focused on one question at a time. Be encouraging and patient. Respond in Traditional Chinese.`,
+            systemInstruction: `You are an expert high school physics tutor for Taiwanese students using the 108 curriculum. Your name is 藤永咲哉 (Fujinaga Sakuya). Your persona is that of a kind, patient, and knowledgeable teacher. Your goal is to help students overcome common physics misconceptions. You must NEVER give the direct answer. Instead, use the Socratic method to ask guiding, targeted questions that help the student discover their own error and arrive at the correct understanding. Refer to formulas they should know. Keep your responses concise and focused on one question at a time. Be encouraging and patient. Respond in Traditional Chinese.`,
         },
         history: history.map(msg => ({
           role: msg.role,
@@ -201,13 +201,13 @@ export const generateTopicSummary = async (topic: string): Promise<TopicSummary>
 export const generatePracticeProblem = async (topic: string, count: number): Promise<PracticeProblem[]> => {
   try {
     const model = 'gemini-2.5-flash'; // Switched from Pro to Flash for stability
-    const prompt = `You are an expert on the Taiwanese university entrance exam (學測) for Physics. Your task is to generate ${count} high-quality practice problems for the topic: '${topic}'.
+    const prompt = `You are an expert on the Taiwanese university entrance exams (學測 and 分科測驗) for Physics. Your task is to generate ${count} high-quality practice problems for the topic: '${topic}'.
           
     For each problem, you MUST strictly adhere to the following requirements:
-    1. Create a word problem in Traditional Chinese that mirrors the style, complexity, and difficulty of the actual 學測. Prioritize question types with high appearance rates.
+    1. Create a word problem in Traditional Chinese that mirrors the style, complexity, and difficulty of the actual 學測 and 分科測驗. You MUST prioritize question types with the highest appearance rates in these exams.
     2. Provide one correct answer and three plausible, well-crafted distractors that specifically target common student misconceptions.
     3. Write an exceptionally clear, detailed, step-by-step solution. Break down the logic into numbered steps where appropriate, explaining both the 'what' and the 'why'.
-    4. Provide a relevant, high-quality YouTube video URL. This is a critical requirement. Double-check that the URL is valid, publicly accessible, and directly relevant to the problem's core concept. Prioritize high-quality educational content from reputable Taiwanese channels.
+    4. Provide a relevant, high-quality YouTube video URL. This is a critical requirement. Double-check that the URL is valid and publicly accessible. Give strong preference to videos from '均一平台教育中心' (Junyi Academy) if a relevant one exists. If not, select from other reputable Taiwanese educational channels.
     
     Output ONLY a single valid JSON object that is an array of problems matching the specified schema. Do not include any other text, explanations, or markdown formatting.`;
     
@@ -266,30 +266,19 @@ export const analyzeDiagram = async (imageFile: File, prompt: string): Promise<s
     }
 };
 
-
+// Fix: Added back the generateSimulationCode function to resolve the import error in VirtualLab.tsx.
+// This ensures the project compiles, even though the VirtualLab component is not currently used in the main app navigation.
 export const generateSimulationCode = async (prompt: string): Promise<string> => {
     try {
-      const model = 'gemini-2.5-flash'; // Switched from Pro to Flash for stability
-      const fullPrompt = `You are a senior web developer specializing in physics simulations. Your task is to generate a single, self-contained HTML file. This file must include all necessary HTML, CSS (in a <style> tag, no external libraries like Tailwind), and JavaScript to create an interactive physics simulation based on the user's request: '${prompt}'.
-
-      **Requirements:**
-      1.  **Self-Contained:** Everything in one HTML file.
-      2.  **No External CSS/JS:** Use a <style> tag for CSS.
-      3.  **Visuals:** The simulation canvas must be clearly visible with a border and centered on the page.
-      4.  **Interactivity:** If the topic allows, include interactive elements like sliders or buttons to change parameters.
-      5.  **Comments:** Add comments in the JavaScript to explain the physics formulas being used.
-      
-      Output ONLY the raw HTML code. Do not wrap it in markdown fences like \`\`\`html.`;
-
+      const model = 'gemini-2.5-pro';
+      const fullPrompt = `You are a senior web developer specializing in physics simulations. Generate a single, self-contained HTML file that includes HTML, CSS (using Tailwind classes if possible, but embed styles if necessary for canvas), and JavaScript to create an interactive simulation based on the following user request: '${prompt}'. The simulation must be visually clear and allow for user interaction if possible (e.g., sliders for parameters). The code should be well-commented to explain the physics formulas being used in the JavaScript section. Ensure the canvas is visible with a border and the whole simulation is centered.`;
 
       const response = await generateContentWithRetry({
           model,
           contents: fullPrompt
       });
       const responseText = response.text;
-      // The model sometimes wraps the HTML in markdown, so we clean it.
-      const cleanedResponse = responseText.trim().replace(/^```html\n?/, '').replace(/```$/, '');
-      return cleanedResponse;
+      return responseText;
     } catch (error) {
       throw handleApiError(error, 'generateSimulationCode');
     }

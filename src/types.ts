@@ -1,4 +1,4 @@
-export type View = 'tutor' | 'practice' | 'lab' | 'diagram';
+export type View = 'tutor' | 'practice' | 'diagram';
 
 export interface ChatMessage {
   role: 'user' | 'model';

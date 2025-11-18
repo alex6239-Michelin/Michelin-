@@ -9,10 +9,9 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) => {
   const navItems: { id: View; text: string; icon: React.ReactElement }[] = [
-    { id: 'tutor', text: '蘇格拉底導師', icon: <TutorIcon /> },
+    { id: 'tutor', text: '咲哉老師解惑', icon: <TutorIcon /> },
     { id: 'practice', text: '動態練習題', icon: <PracticeIcon /> },
     { id: 'diagram', text: '圖表分析', icon: <DiagramIcon /> },
-    { id: 'lab', text: '虛擬實驗室', icon: <LabIcon /> },
   ];
 
   return (

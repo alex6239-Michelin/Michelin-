@@ -14,7 +14,7 @@ const getPdfStyles = (): string => `
       font-family: 'Noto Sans TC', sans-serif;
       font-size: 10.5pt;
       line-height: 1.8;
-      color: #4A4A4A;
+      color: #333333;
       background-color: #ffffff;
     }
     h1, h2, h3, h4, strong {
