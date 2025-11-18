@@ -15,7 +15,7 @@ const fileToBase64 = (file: File): Promise<string> => {
 const DiagramAnalyzer: React.FC = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [prompt, setPrompt] = useState<string>('這是一個斜面上的物體自由體圖，請幫我看看。');
+  const [prompt, setPrompt] = useState<string>('請詳細描述這張圖的內容，以及您遇到的困難或想確認的觀念，例如：『這是在水平桌面上推動物體的自由體圖，我不確定摩擦力的方向是否正確。』');
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,15 +56,15 @@ const DiagramAnalyzer: React.FC = () => {
             <div>
                 <h1>圖表分析報告</h1>
                 <hr>
-                <div class="pdf-block" style="margin-bottom: 20px;">
+                <div style="page-break-inside: avoid; margin-bottom: 20px;">
                     <h3>學生的問題：</h3>
                     <p>${prompt}</p>
                 </div>
-                <div class="pdf-block" style="margin-bottom: 20px;">
+                <div style="page-break-inside: avoid; margin-bottom: 20px;">
                     <h3>上傳的圖表：</h3>
                     <img src="${imageBase64}" alt="student diagram" style="max-width: 500px;" />
                 </div>
-                <div class="pdf-block" style="margin-bottom: 20px;">
+                <div style="page-break-inside: avoid; margin-bottom: 20px;">
                     <h3>AI 教授的回饋：</h3>
                     <p>${feedback.replace(/\n/g, '<br>')}</p>
                 </div>

@@ -1,3 +1,4 @@
+
 declare var process: any;
 
 import { GoogleGenAI, Type } from "@google/genai";
@@ -88,6 +89,7 @@ export const getSocraticResponse = async (history: ChatMessage[], newUserMessage
 
 export const generateTopicSummary = async (topic: string): Promise<TopicSummary> => {
   try {
+    // Fix: Updated deprecated 'gemini-1.5-pro' to 'gemini-2.5-pro'.
     const model = 'gemini-2.5-pro';
     const prompt = `You are an expert on the Taiwanese university entrance exam (學測) for Physics. Your task is to generate a concise yet comprehensive "Topic Summary" for the topic: '${topic}'.
           
@@ -124,6 +126,7 @@ export const generateTopicSummary = async (topic: string): Promise<TopicSummary>
 
 export const generatePracticeProblem = async (topic: string, count: number): Promise<PracticeProblem[]> => {
   try {
+    // Fix: Updated deprecated 'gemini-1.5-pro' to 'gemini-2.5-pro'.
     const model = 'gemini-2.5-pro';
     const prompt = `You are an expert on the Taiwanese university entrance exam (學測) for Physics. Your task is to generate ${count} high-quality practice problems for the topic: '${topic}'.
           
@@ -131,7 +134,7 @@ export const generatePracticeProblem = async (topic: string, count: number): Pro
     1. Create a word problem in Traditional Chinese that mirrors the style, complexity, and difficulty of the actual 學測. Prioritize question types with high appearance rates.
     2. Provide one correct answer and three plausible, well-crafted distractors that specifically target common student misconceptions.
     3. Write an exceptionally clear, detailed, step-by-step solution. Break down the logic into numbered steps where appropriate, explaining both the 'what' and the 'why'.
-    4. Provide a relevant, high-quality YouTube video URL. This is a critical requirement. Double-check that the URL is valid, publicly accessible, and directly relevant to the problem's core concept. Prioritize high-quality educational content from reputable Taiwanese channels.
+    4. Provide a relevant, high-quality YouTube video URL. This is a NON-NEGOTIABLE requirement. Your primary source MUST be the "均一教育平台" YouTube channel. Search for a video on that channel that directly explains the core concept needed to solve the problem. Double-check that the URL is a valid, working, and publicly accessible link. Do not provide a link to a playlist or the channel's homepage; it must be a link to a specific video. If, and only if, a directly relevant video from "均一教育平台" is absolutely not available, you may then select one from another reputable Taiwanese educational channel.
     
     Output ONLY a single valid JSON object that is an array of problems matching the specified schema. Do not include any other text, explanations, or markdown formatting.`;
     
@@ -191,6 +194,7 @@ export const analyzeDiagram = async (imageFile: File, prompt: string): Promise<s
 
 export const generateSimulationCode = async (prompt: string): Promise<string> => {
     try {
+      // Fix: Updated deprecated 'gemini-1.5-pro' to 'gemini-2.5-pro'.
       const model = 'gemini-2.5-pro';
       const fullPrompt = `You are a senior web developer specializing in physics simulations. Generate a single, self-contained HTML file that includes HTML, CSS (using Tailwind classes if possible, but embed styles if necessary for canvas), and JavaScript to create an interactive simulation based on the following user request: '${prompt}'. The simulation must be visually clear and allow for user interaction if possible (e.g., sliders for parameters). The code should be well-commented to explain the physics formulas being used in the JavaScript section. Ensure the canvas is visible with a border and the whole simulation is centered.`;
 

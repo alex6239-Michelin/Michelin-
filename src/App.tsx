@@ -1,7 +1,9 @@
+
 import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import SocraticTutor from './components/SocraticTutor';
 import ProblemGenerator from './components/ProblemGenerator';
+import VirtualLab from './components/VirtualLab';
 import DiagramAnalyzer from './components/DiagramAnalyzer';
 import { type View } from './types';
 
@@ -14,6 +16,8 @@ const App: React.FC = () => {
         return <SocraticTutor />;
       case 'practice':
         return <ProblemGenerator />;
+      case 'lab':
+        return <VirtualLab />;
       case 'diagram':
         return <DiagramAnalyzer />;
       default:

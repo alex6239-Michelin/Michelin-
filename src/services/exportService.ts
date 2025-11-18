@@ -4,61 +4,59 @@ declare const jspdf: any;
 declare const html2canvas: any;
 
 /**
- * Creates a string of CSS styles to be embedded in the PDF for better formatting.
+ * Creates a string of CSS styles to be embedded in the PDF for better formatting,
+ * mimicking the style of the provided physics learning pack image.
  * @returns A <style> tag with CSS rules as a string.
  */
 const getPdfStyles = (): string => `
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700&display=swap');
     body { 
       font-family: 'Noto Sans TC', sans-serif;
-      font-size: 10.5pt;
-      line-height: 1.8;
-      color: #333333;
-      background-color: #ffffff;
+      font-size: 11pt;
+      line-height: 1.6;
+      color: #000000;
     }
     h1, h2, h3, h4, strong {
-      font-family: 'Noto Serif TC', serif; 
+      font-family: 'Noto Sans TC', sans-serif; 
       font-weight: 700;
-      color: #6D2A5B;
       margin: 0;
       padding: 0;
     }
     h1 {
-      font-size: 24pt;
+      font-size: 26pt;
+      color: #333;
       text-align: left;
-      margin-bottom: 12px;
-      padding-bottom: 12px;
-      border-bottom: 2px solid #FF69B4;
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #ef4444; /* Red color from image */
     }
     h2 {
-      font-size: 16pt;
-      font-family: 'Noto Sans TC', sans-serif;
+      font-size: 18pt;
       color: #ffffff;
-      background: linear-gradient(135deg, #FF69B4, #C973FF);
-      margin-top: 28px;
+      background-color: #ef4444; /* Red color from image */
+      margin-top: 25px;
       margin-bottom: 20px;
       padding: 8px 16px;
       border-radius: 8px;
     }
     h3 {
-      font-size: 13pt;
-      color: #FF69B4;
+      font-size: 14pt;
+      color: #d32f2f; /* Darker red for subsection titles */
       font-weight: 700;
       margin-top: 20px;
       margin-bottom: 10px;
     }
     h4 {
-      font-size: 11.5pt;
-      color: #8C5E8A;
+      font-size: 12pt;
+      color: #000000;
       font-weight: 700;
-      margin-bottom: 8px;
+      margin-bottom: 5px;
     }
     p, div {
       margin-bottom: 12px;
     }
     a {
-      color: #C973FF;
+      color: #2b6cb0;
       text-decoration: none;
       font-weight: 500;
     }
@@ -67,19 +65,24 @@ const getPdfStyles = (): string => `
     }
     hr {
       border: 0;
-      border-top: 1px solid #FCE4EC;
+      border-top: 1px solid #e2e8f0;
       margin: 30px 0;
     }
-    .pdf-block {
-      page-break-inside: avoid;
+    /* Remove the boxy style from content blocks */
+    div[style*="page-break-inside: avoid;"],
+    article[style*="page-break-inside: avoid;"] {
+      background-color: transparent;
+      border: none;
+      border-radius: 0;
+      padding: 0;
+      margin-bottom: 25px;
     }
     img {
       max-width: 100%;
       height: auto;
       display: block;
       margin: 15px auto;
-      border-radius: 8px;
-      border: 1px solid #FCE4EC;
+      border-radius: 4px;
     }
   </style>
 `;
@@ -101,56 +104,30 @@ export const exportToPdf = async (htmlContent: string, filename: string): Promis
     const usableHeightMM = pdfHeight - (margin * 2);
     let currentY = margin;
 
-    const sourceContainer = document.createElement('div');
-    sourceContainer.style.position = 'absolute';
-    sourceContainer.style.left = '-9999px';
-    sourceContainer.innerHTML = getPdfStyles() + htmlContent;
-    document.body.appendChild(sourceContainer);
+    const tempContainer = document.createElement('div');
+    tempContainer.style.position = 'absolute';
+    tempContainer.style.left = '-9999px';
+    tempContainer.style.width = '800px'; // A fixed width for consistent rendering
+    tempContainer.style.background = 'white';
+    document.body.appendChild(tempContainer);
     
-    // Select all logical content blocks to render individually, including <hr> tags
-    const contentBlocks = Array.from(sourceContainer.querySelectorAll('.pdf-block, h1, h2, hr'));
+    const sourceContainer = document.createElement('div');
+    sourceContainer.innerHTML = getPdfStyles() + htmlContent;
+    
+    // Select all logical content blocks to render individually
+    const contentBlocks = Array.from(sourceContainer.querySelectorAll('div[style*="page-break-inside: avoid;"], article[style*="page-break-inside: avoid;"], h1, h2'));
 
+    // If no specific blocks are found, treat the whole content as one block
     if (contentBlocks.length === 0) {
-        const wrapper = document.createElement('div');
-        wrapper.innerHTML = sourceContainer.innerHTML; // get the whole thing
-        contentBlocks.push(wrapper);
+        contentBlocks.push(sourceContainer);
     }
     
     for (const block of contentBlocks) {
-      if (block.tagName.toLowerCase() === 'hr') {
-         if (currentY + 10 > usableHeightMM + margin) {
-            pdf.addPage();
-            currentY = margin;
-         }
-         pdf.setDrawColor(252, 228, 236); // Light Pink
-         pdf.line(margin, currentY, pdfWidth - margin, currentY);
-         currentY += 6;
-         continue;
-      }
-
-      const renderContainer = document.createElement('div');
-      renderContainer.style.position = 'absolute';
-      renderContainer.style.left = '-9999px';
-      renderContainer.style.width = '800px';
-      renderContainer.style.background = 'white';
+      // Use a clean container for each canvas render
+      tempContainer.innerHTML = '';
+      tempContainer.appendChild(block.cloneNode(true));
       
-      // Append styles and the block itself to a clean container for rendering
-      renderContainer.innerHTML = getPdfStyles();
-      renderContainer.appendChild(block.cloneNode(true));
-      document.body.appendChild(renderContainer);
-      
-      const canvas = await html2canvas(renderContainer, { 
-        scale: 2, 
-        useCORS: true,
-        // CRITICAL FIX: Use scrollHeight to capture the full content, not just the visible part.
-        width: renderContainer.scrollWidth,
-        height: renderContainer.scrollHeight,
-        windowWidth: renderContainer.scrollWidth,
-        windowHeight: renderContainer.scrollHeight,
-      });
-
-      document.body.removeChild(renderContainer);
-
+      const canvas = await html2canvas(tempContainer, { scale: 2, useCORS: true });
       const imgData = canvas.toDataURL('image/png');
       const elementHeightMM = (canvas.height / canvas.width) * usableWidthMM;
       
@@ -160,10 +137,10 @@ export const exportToPdf = async (htmlContent: string, filename: string): Promis
       }
       
       pdf.addImage(imgData, 'PNG', margin, currentY, usableWidthMM, elementHeightMM);
-      currentY += elementHeightMM + 2; // Add a small gap between blocks
+      currentY += elementHeightMM + 4; // Add a 4mm gap between blocks
     }
 
-    document.body.removeChild(sourceContainer);
+    document.body.removeChild(tempContainer);
     pdf.save(`${filename}.pdf`);
 
   } catch (error) {

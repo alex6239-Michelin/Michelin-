@@ -15,7 +15,7 @@ const fileToBase64 = (file: File): Promise<string> => {
 const DiagramAnalyzer: React.FC = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [prompt, setPrompt] = useState<string>('這是一個斜面上的物體自由體圖，請幫我看看。');
+  const [prompt, setPrompt] = useState<string>('請詳細描述這張圖的內容，以及您遇到的困難或想確認的觀念，例如：『這是在水平桌面上推動物體的自由體圖，我不確定摩擦力的方向是否正確。』');
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);

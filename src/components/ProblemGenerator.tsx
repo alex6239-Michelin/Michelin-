@@ -76,15 +76,15 @@ const ProblemGenerator: React.FC = () => {
     
     const summaryHtml = summary ? `
         <h2>${topic} - 核心總整理</h2>
-        <div class="pdf-block">
+        <div style="margin-bottom: 20px; padding: 10px; page-break-inside: avoid;">
             <h3>⭐ 重點觀念叮嚀</h3>
             <p>${summary.keyConcepts.replace(/\n/g, '<br>')}</p>
         </div>
-        <div class="pdf-block">
+        <div style="margin-bottom: 20px; padding: 10px; page-break-inside: avoid;">
             <h3>📏 必背公式整理</h3>
             <p>${summary.formulas.replace(/\n/g, '<br>')}</p>
         </div>
-        <div class="pdf-block" style="margin-bottom: 20px;">
+        <div style="margin-bottom: 30px; padding: 10px; page-break-inside: avoid;">
             <h3>🔑 重要題型解題技巧</h3>
             <p>${summary.solvingTechniques.replace(/\n/g, '<br>')}</p>
         </div>
@@ -96,21 +96,20 @@ const ProblemGenerator: React.FC = () => {
         const optionsHtml = Object.entries(options).map(([key, value]) => 
           `<p style="margin: 4px 0;"><strong>${key.toUpperCase()}.</strong> ${value}</p>`
         ).join('');
-        const youtubeHtml = youtubeLink ? `<div class="pdf-block"><p><strong>參考影片：</strong><a href="${youtubeLink}">${youtubeLink}</a></p></div>` : '';
+        const youtubeHtml = youtubeLink ? `<p><strong>參考影片：</strong><a href="${youtubeLink}">${youtubeLink}</a></p>` : '';
 
         return `
-        <div class="pdf-block"><h3>第 ${index + 1} 題：</h3></div>
-        <div class="pdf-block"><p>${question.replace(/\n/g, '<br>')}</p></div>
-        <div class="pdf-block">
+        <article style="margin-bottom: 30px; page-break-inside: avoid;">
+            <h3>第 ${index + 1} 題：</h3>
+            <p>${question.replace(/\n/g, '<br>')}</p>
             <h4>選項：</h4>
             ${optionsHtml}
-        </div>
-        <div class="pdf-block" style="margin-top: 15px;">
+            <br>
             <p><strong>正確答案：${correctAnswer.toUpperCase()}</strong></p>
             <h4>詳解：</h4>
             <p>${solution.replace(/\n/g, '<br>')}</p>
-        </div>
-        ${youtubeHtml}
+            ${youtubeHtml}
+        </article>
         `;
     }).join('<hr style="margin: 20px 0;">');
 
@@ -188,17 +187,7 @@ const ProblemGenerator: React.FC = () => {
         </div>
       </div>
 
-      {isLoading && (
-        <div className="text-center p-8 text-slate-500 dark:text-slate-400">
-            <div className="flex items-center justify-center gap-2">
-                <div className="w-2.5 h-2.5 bg-pink-400 rounded-full animate-pulse"></div>
-                <div className="w-2.5 h-2.5 bg-pink-400 rounded-full animate-pulse [animation-delay:0.2s]"></div>
-                <div className="w-2.5 h-2.5 bg-pink-400 rounded-full animate-pulse [animation-delay:0.4s]"></div>
-            </div>
-            <p className="mt-4">公主正在施展魔法，請稍候...</p>
-            <p className="text-sm mt-2">若時間較長，可能是伺服器繁忙，應用程式會自動重試。</p>
-        </div>
-      )}
+      {isLoading && <div className="text-center p-8">正在為您準備學習包，請稍候...</div>}
       {error && <div className="text-center p-8 text-red-500">{error}</div>}
       
       {summary && (

@@ -1,63 +1,17 @@
-// Fix: Switched to using `process.env.API_KEY` to align with Gemini API guidelines and resolved associated TypeScript errors.
+
 declare var process: any;
 
-import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { type ChatMessage, type PracticeProblem, type TopicSummary } from '../types';
 
 const apiKey = process.env.API_KEY;
 
 if (!apiKey) {
-    // This is a critical module-level check. It will throw an error during app initialization
-    // if the API_KEY is not available at build time, preventing a blank screen with a cryptic error.
-    throw new Error("API_KEY environment variable is not set. Please ensure it's configured in your deployment platform (e.g., Vercel) and that vite.config.ts is set up to expose it.");
+    // This error will halt the application if the key is not set.
+    throw new Error("API_KEY environment variable is not set. Please check your project settings.");
 }
 
 const ai = new GoogleGenAI({ apiKey });
-
-/**
- * A wrapper for ai.models.generateContent that includes a robust retry mechanism with exponential backoff and jitter.
- * This helps the application recover from transient server errors like 503 (Overloaded) or 429 (Rate limited).
- * @param params The parameters for the generateContent call.
- * @param retries The maximum number of retries.
- * @param delay The initial delay in milliseconds.
- * @returns A Promise that resolves with the GenerateContentResponse.
- */
-const generateContentWithRetry = async (
-    params: any, 
-    retries = 5, 
-    delay = 3000
-): Promise<GenerateContentResponse> => {
-    let lastError: any;
-    for (let i = 0; i < retries; i++) {
-        try {
-            const response = await ai.models.generateContent(params);
-            if (!response || !response.text) {
-                throw new Error("AI returned an empty or invalid response.");
-            }
-            return response;
-        } catch (error: any) {
-            lastError = error;
-            const errorMessage = error.toString();
-            // Only retry on specific, transient server-side errors.
-            const isRetryable = errorMessage.includes('500') || errorMessage.includes('503') || errorMessage.includes('429') || errorMessage.includes('Rpc failed');
-            
-            if (isRetryable && i < retries - 1) {
-                const jitter = Math.floor(Math.random() * 1000);
-                const nextDelay = delay + jitter;
-                console.warn(`Attempt ${i + 1} failed with a retryable error. Retrying in ${nextDelay}ms...`);
-                await new Promise(res => setTimeout(res, nextDelay));
-                delay *= 2; // Exponential backoff for the next base delay
-            } else {
-                // On the last attempt or for a non-retryable error, throw the last captured error.
-                throw lastError;
-            }
-        }
-    }
-    // This line should not be reachable if retries > 0, but it satisfies TypeScript
-    // and provides a fallback by throwing the last known error.
-    throw lastError;
-};
-
 
 /**
  * Handles API errors by creating user-friendly, context-specific error objects.
@@ -78,7 +32,6 @@ const handleApiError = (error: any, context: string): Error => {
          message = '向 AI 伺服器發送的請求格式有誤 (錯誤 400)，這可能是由於輸入內容包含不安全或不支援的字詞。';
     } else if (errorMessage.includes('429')) {
         message = '您的請求頻率過高，請稍後再試。';
-    // Fix: Updated API key error message to be generic and reference the correct environment variable.
     } else if (errorMessage.includes('API key not valid') || errorMessage.includes('API_KEY')) {
         message = 'API 金鑰無效或未設置，請檢查您的環境設定。';
     }
@@ -114,56 +67,30 @@ const fileToGenerativePart = async (file: File) => {
 };
 
 export const getSocraticResponse = async (history: ChatMessage[], newUserMessage: string): Promise<string> => {
-  const retries = 5;
-  let delay = 3000;
-  let lastError: any;
+  try {
+    const model = 'gemini-2.5-flash';
+    const chat = ai.chats.create({
+      model,
+      config: {
+          systemInstruction: `You are an expert high school physics tutor for Taiwanese students using the 18 curriculum. Your name is Socrates. Your goal is to help students overcome common physics misconceptions. You must NEVER give the direct answer. Instead, use the Socratic method to ask guiding, targeted questions that help the student discover their own error and arrive at the correct understanding. Refer to formulas they should know. Keep your responses concise and focused on one question at a time. Be encouraging and patient. Respond in Traditional Chinese.`,
+      },
+      history: history.map(msg => ({
+        role: msg.role,
+        parts: [{ text: msg.text }]
+      })),
+    });
 
-  for (let i = 0; i < retries; i++) {
-    try {
-      const model = 'gemini-2.5-flash';
-      const chat = ai.chats.create({
-        model,
-        config: {
-            systemInstruction: `You are an expert high school physics tutor for Taiwanese students using the 108 curriculum. Your name is 藤永咲哉 (Fujinaga Sakuya). Your persona is that of a kind, patient, and knowledgeable teacher. Your goal is to help students overcome common physics misconceptions. You must NEVER give the direct answer. Instead, use the Socratic method to ask guiding, targeted questions that help the student discover their own error and arrive at the correct understanding. Refer to formulas they should know. Keep your responses concise and focused on one question at a time. Be encouraging and patient. Respond in Traditional Chinese.`,
-        },
-        history: history.map(msg => ({
-          role: msg.role,
-          parts: [{ text: msg.text }]
-        })),
-      });
-
-      const result = await chat.sendMessage({ message: newUserMessage });
-      const responseText = result.text;
-      if (!responseText) {
-          throw new Error('AI 回應無效，未包含任何文字。'); // This will be caught and potentially retried
-      }
-      return responseText;
-
-    } catch (error: any) {
-      lastError = error;
-      const errorMessage = error.toString();
-      // Also consider "empty response" as a potentially transient, retryable issue.
-      const isRetryable = errorMessage.includes('500') || errorMessage.includes('503') || errorMessage.includes('429') || errorMessage.includes('Rpc failed') || errorMessage.includes('AI 回應無效');
-
-      if (isRetryable && i < retries - 1) {
-          const jitter = Math.floor(Math.random() * 1000);
-          const nextDelay = delay + jitter;
-          console.warn(`Socratic response attempt ${i + 1} failed with a retryable error. Retrying in ${nextDelay}ms...`);
-          await new Promise(res => setTimeout(res, nextDelay));
-          delay *= 2;
-      } else {
-          // On the last attempt or for a non-retryable error, throw the last captured error.
-          throw handleApiError(lastError, 'getSocraticResponse');
-      }
-    }
+    const result = await chat.sendMessage({ message: newUserMessage });
+    return result.text;
+  } catch(error) {
+    throw handleApiError(error, 'getSocraticResponse');
   }
-  // This line should not be reachable.
-  throw handleApiError(lastError, 'getSocraticResponse');
 };
 
 export const generateTopicSummary = async (topic: string): Promise<TopicSummary> => {
   try {
-    const model = 'gemini-2.5-flash'; // Switched to Flash for consistency and speed
+    // Fix: Updated deprecated 'gemini-1.5-pro' to 'gemini-2.5-pro'.
+    const model = 'gemini-2.5-pro';
     const prompt = `You are an expert on the Taiwanese university entrance exam (學測) for Physics. Your task is to generate a concise yet comprehensive "Topic Summary" for the topic: '${topic}'.
           
     The summary must be in Traditional Chinese and contain three distinct sections:
@@ -173,7 +100,7 @@ export const generateTopicSummary = async (topic: string): Promise<TopicSummary>
 
     Output ONLY a single valid JSON object that matches the specified schema. Do not include any other text, explanations, or markdown formatting.`;
     
-    const response = await generateContentWithRetry({
+    const response = await ai.models.generateContent({
       model,
       contents: prompt,
       config: {
@@ -189,8 +116,7 @@ export const generateTopicSummary = async (topic: string): Promise<TopicSummary>
           },
       },
     });
-    const responseText = response.text;
-    const data = parseJsonFromResponse<TopicSummary>(responseText);
+    const data = parseJsonFromResponse<TopicSummary>(response.text);
     return data;
   } catch(error) {
     throw handleApiError(error, 'generateTopicSummary');
@@ -200,18 +126,19 @@ export const generateTopicSummary = async (topic: string): Promise<TopicSummary>
 
 export const generatePracticeProblem = async (topic: string, count: number): Promise<PracticeProblem[]> => {
   try {
-    const model = 'gemini-2.5-flash'; // Switched from Pro to Flash for stability
-    const prompt = `You are an expert on the Taiwanese university entrance exams (學測 and 分科測驗) for Physics. Your task is to generate ${count} high-quality practice problems for the topic: '${topic}'.
+    // Fix: Updated deprecated 'gemini-1.5-pro' to 'gemini-2.5-pro'.
+    const model = 'gemini-2.5-pro';
+    const prompt = `You are an expert on the Taiwanese university entrance exam (學測) for Physics. Your task is to generate ${count} high-quality practice problems for the topic: '${topic}'.
           
     For each problem, you MUST strictly adhere to the following requirements:
-    1. Create a word problem in Traditional Chinese that mirrors the style, complexity, and difficulty of the actual 學測 and 分科測驗. You MUST prioritize question types with the highest appearance rates in these exams.
+    1. Create a word problem in Traditional Chinese that mirrors the style, complexity, and difficulty of the actual 學測. Prioritize question types with high appearance rates.
     2. Provide one correct answer and three plausible, well-crafted distractors that specifically target common student misconceptions.
     3. Write an exceptionally clear, detailed, step-by-step solution. Break down the logic into numbered steps where appropriate, explaining both the 'what' and the 'why'.
-    4. Provide a relevant, high-quality YouTube video URL. This is a critical requirement. Double-check that the URL is valid and publicly accessible. Give strong preference to videos from '均一平台教育中心' (Junyi Academy) if a relevant one exists. If not, select from other reputable Taiwanese educational channels.
+    4. Provide a relevant, high-quality YouTube video URL. This is a NON-NEGOTIABLE requirement. Your primary source MUST be the "均一教育平台" YouTube channel. Search for a video on that channel that directly explains the core concept needed to solve the problem. Double-check that the URL is a valid, working, and publicly accessible link. Do not provide a link to a playlist or the channel's homepage; it must be a link to a specific video. If, and only if, a directly relevant video from "均一教育平台" is absolutely not available, you may then select one from another reputable Taiwanese educational channel.
     
     Output ONLY a single valid JSON object that is an array of problems matching the specified schema. Do not include any other text, explanations, or markdown formatting.`;
     
-    const response = await generateContentWithRetry({
+    const response = await ai.models.generateContent({
       model,
       contents: prompt,
       config: {
@@ -241,8 +168,7 @@ export const generatePracticeProblem = async (topic: string, count: number): Pro
           },
       },
     });
-    const responseText = response.text;
-    const data = parseJsonFromResponse<PracticeProblem[]>(responseText);
+    const data = parseJsonFromResponse<PracticeProblem[]>(response.text);
     return data;
   } catch (error) {
     throw handleApiError(error, 'generatePracticeProblem');
@@ -255,30 +181,28 @@ export const analyzeDiagram = async (imageFile: File, prompt: string): Promise<s
       const imagePart = await fileToGenerativePart(imageFile);
       const fullPrompt = `You are a strict but helpful physics professor. A student has submitted a free-body diagram for analysis. Your task is to evaluate it based on fundamental physics principles, in Traditional Chinese. DO NOT give the answer or point out the error directly. Instead, use the Socratic method to ask one single, guiding question that directs the student's attention to a potential error in their diagram. Your question should encourage them to rethink their application of a specific concept (e.g., '關於正向力，你認為它應該與哪個表面垂直？'). Here is the student's question: "${prompt}" and their diagram:`;
 
-      const response = await generateContentWithRetry({
+      const response = await ai.models.generateContent({
           model,
           contents: { parts: [{text: fullPrompt}, imagePart] },
       });
-      const responseText = response.text;
-      return responseText;
+      return response.text;
     } catch (error) {
       throw handleApiError(error, 'analyzeDiagram');
     }
 };
 
-// Fix: Added back the generateSimulationCode function to resolve the import error in VirtualLab.tsx.
-// This ensures the project compiles, even though the VirtualLab component is not currently used in the main app navigation.
+
 export const generateSimulationCode = async (prompt: string): Promise<string> => {
     try {
+      // Fix: Updated deprecated 'gemini-1.5-pro' to 'gemini-2.5-pro'.
       const model = 'gemini-2.5-pro';
       const fullPrompt = `You are a senior web developer specializing in physics simulations. Generate a single, self-contained HTML file that includes HTML, CSS (using Tailwind classes if possible, but embed styles if necessary for canvas), and JavaScript to create an interactive simulation based on the following user request: '${prompt}'. The simulation must be visually clear and allow for user interaction if possible (e.g., sliders for parameters). The code should be well-commented to explain the physics formulas being used in the JavaScript section. Ensure the canvas is visible with a border and the whole simulation is centered.`;
 
-      const response = await generateContentWithRetry({
+      const response = await ai.models.generateContent({
           model,
           contents: fullPrompt
       });
-      const responseText = response.text;
-      return responseText;
+      return response.text;
     } catch (error) {
       throw handleApiError(error, 'generateSimulationCode');
     }
